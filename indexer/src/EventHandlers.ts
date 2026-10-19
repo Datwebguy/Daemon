@@ -16,6 +16,7 @@ import {
   applyCompounded,
   applyKeeperCompound,
   applyHype,
+  applyChogTransfer,
   applySweep,
   applyUpdate,
   emptyStats,
@@ -72,6 +73,14 @@ indexer.onEvent(
     }
   },
 );
+
+// ---------- Chog ownership ----------
+
+indexer.onEvent({ contract: "MockChog", event: "Transfer" }, async ({ event, context }) => {
+  const id = event.params.tokenId.toString();
+  const existing = await context.Chog.get(id);
+  context.Chog.set(applyChogTransfer(existing, event.params.to, event.params.tokenId, event.block.number, event.block.timestamp));
+});
 
 // ---------- helpers ----------
 

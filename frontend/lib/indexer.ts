@@ -4,48 +4,13 @@ import { env } from "./config";
  * Field names that may still change (lifetime yield, bounty, ...) are centralized in INDEXER_FIELDS below.
  * Rows come from an external service: always parse numeric fields with toBigIntSafe (lib/format.ts).
  *
- * Expected GraphQL shape (Envio / Hasura style; adapt the query strings below for Goldsky/subgraph style).
+ * The queries below run against the Envio indexer in ../indexer (schema.graphql). Where the app's row types use
+ * different names than the indexer, the query renames them with GraphQL aliases, so components stay unchanged:
+ *   Compounded.keeper_id  -> caller      (the bounty recipient)
+ *   Hyped.hyper           -> from
+ *   Daemon.lastMood       -> mood,  Daemon.id -> account (the Daemon's ERC-6551 address is its id)
+ * Owners come from the Chog entity (kept current from the collection's Transfer events).
  * History is ordered by blockNumber + logIndex, never by timestamp (Monad has 1s timestamp granularity).
- *
- *   type DaemonUpdate {          # IDaemonAccount.DaemonUpdate
- *     id: ID!                    # `${txHash}-${logIndex}`
- *     tokenId: BigInt!
- *     account: String!           # Daemon (ERC-6551) address that emitted the event
- *     mood: Int!
- *     message: String!
- *     yieldAmount: BigInt!
- *     blockNumber: BigInt!
- *     logIndex: Int!
- *     timestamp: BigInt!
- *     txHash: String!
- *   }
- *
- *   type Compounded {            # IDaemonAccount.Compounded
- *     id: ID!  tokenId: BigInt!  account: String!
- *     caller: String!            # the bounty recipient (not necessarily tx.origin)
- *     profit: BigInt!  bounty: BigInt!
- *     blockNumber: BigInt!  logIndex: Int!  timestamp: BigInt!  txHash: String!
- *   }
- *
- *   type Hyped {                 # IDaemonAccount.Hyped
- *     id: ID!  tokenId: BigInt!  account: String!  from: String!
- *     token: String!             # 0x0 for MON, else the $CHOG token
- *     amount: BigInt!
- *     blockNumber: BigInt!  logIndex: Int!  timestamp: BigInt!  txHash: String!
- *   }
- *
- *   type Daemon {                # aggregate, one per Chog
- *     id: ID!                    # tokenId as string
- *     tokenId: BigInt!
- *     account: String!
- *     owner: String              # current Chog holder (from MockChog Transfer)
- *     mood: Int!
- *     lastMessage: String
- *     lifetimeYield: BigInt!
- *     compoundCount: Int!
- *     hypeCount: Int!
- *     lastYield: BigInt
- *   }
  */
 
 export type DaemonUpdateRow = {
@@ -123,8 +88,8 @@ export const INDEXER_FIELDS = {
   compoundedBounty: "bounty",
   /** Compounded event: gross profit harvested. */
   compoundedProfit: "profit",
-  /** Compounded event: bounty recipient (the contract emits the recipient as `caller`). */
-  compoundedCaller: "caller",
+  /** Compounded event: bounty recipient (the indexer stores it as the keeper relation's id). */
+  compoundedCaller: "keeper_id",
 } as const;
 
 const F = INDEXER_FIELDS;
@@ -137,21 +102,36 @@ export const FEED_QUERY = /* GraphQL */ `
       id tokenId caller: ${F.compoundedCaller} profit: ${F.compoundedProfit} bounty: ${F.compoundedBounty}
       blockNumber logIndex timestamp txHash
     }
-    Hyped(${ORDER}, limit: $limit) { id tokenId from token amount blockNumber logIndex timestamp txHash }
+    Hyped(${ORDER}, limit: $limit) { id tokenId from: hyper token amount blockNumber logIndex timestamp txHash }
   }
 `;
 
 export const LEADERBOARD_QUERY = /* GraphQL */ `
   query Leaderboard($limit: Int!) {
     Daemon(order_by: { ${F.daemonLifetimeYield}: desc }, limit: $limit) {
-      id tokenId account owner mood lastMessage lifetimeYield: ${F.daemonLifetimeYield} compoundCount hypeCount lastYield
+      id tokenId account: id mood: lastMood lastMessage lifetimeYield: ${F.daemonLifetimeYield} compoundCount hypeCount
     }
   }
 `;
 
+/** This season's yield events (positive ones only); summed per Chog by rankSeason in lib/season.ts. */
+export const SEASON_QUERY = /* GraphQL */ `
+  query Season($since: Int!, $limit: Int!) {
+    DaemonUpdate(where: { timestamp: { _gte: $since }, yieldAmount: { _gt: 0 } }, ${ORDER}, limit: $limit) { tokenId yieldAmount }
+  }
+`;
+
+/** Current mood and last words for the Chogs on the season board. */
+export const SEASON_MOODS_QUERY = /* GraphQL */ `
+  query SeasonMoods($ids: [numeric!]!) {
+    Daemon(where: { tokenId: { _in: $ids } }) { id tokenId account: id mood: lastMood lastMessage }
+  }
+`;
+
+/** Every Chog a wallet holds (owner is stored lowercase), including Chogs whose Daemon is still asleep. */
 export const OWNED_QUERY = /* GraphQL */ `
   query Owned($owner: String!) {
-    Daemon(where: { owner: { _ilike: $owner } }, order_by: { tokenId: asc }) { tokenId }
+    Chog(where: { owner: { _eq: $owner } }, order_by: { tokenId: asc }) { tokenId }
   }
 `;
 

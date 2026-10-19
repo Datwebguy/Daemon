@@ -127,6 +127,14 @@ type Entities = {
     readonly timestamp: number;
     readonly txHash: string;
   };
+  Chog: {
+    readonly id: string;
+    readonly tokenId: bigint;
+    readonly owner: string;
+    readonly mintedAtBlock: number;
+    readonly mintedAtTimestamp: number;
+    readonly transferCount: number;
+  };
   Keeper: {
     readonly id: string;
     readonly totalBounties: bigint;
@@ -174,6 +182,9 @@ declare module "envio" {
               }
             >;
           };
+          MockChog: {
+            Transfer: Ev<"MockChog", "Transfer", { readonly from: Address; readonly to: Address; readonly tokenId: bigint }>;
+          };
           DaemonAccount: {
             Allocated: Ev<"DaemonAccount", "Allocated", { readonly tokenId: bigint; readonly source: Address; readonly assets: bigint; readonly shares: bigint }>;
             Deallocated: Ev<"DaemonAccount", "Deallocated", { readonly tokenId: bigint; readonly source: Address; readonly shares: bigint; readonly assets: bigint }>;
@@ -193,6 +204,9 @@ declare module "envio" {
                 readonly tokenId?: SingleOrMultiple<bigint>;
               };
             };
+          };
+          MockChog: {
+            Transfer: { readonly params: { readonly from?: SingleOrMultiple<Address>; readonly to?: SingleOrMultiple<Address>; readonly tokenId?: SingleOrMultiple<bigint> } };
           };
           DaemonAccount: {
             Allocated: { readonly params: { readonly tokenId?: SingleOrMultiple<bigint>; readonly source?: SingleOrMultiple<Address> } };
@@ -217,6 +231,7 @@ declare module "envio" {
   export type Hyped = Entities["Hyped"];
   export type BoostApplied = Entities["BoostApplied"];
   export type Allocation = Entities["Allocation"];
+  export type Chog = Entities["Chog"];
   export type Keeper = Entities["Keeper"];
   export type Hyper = Entities["Hyper"];
   export type Stats = Entities["Stats"];

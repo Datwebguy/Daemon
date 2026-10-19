@@ -19,6 +19,7 @@ This indexer serves the Daemon feed, the leaderboards and keeper stats on **Mona
 | `DaemonUpdate` | feed: mood + message + yield per update |
 | `Compounded` | every compound: `keeper` (the event's `caller` = bounty recipient), gross `profit`, `bounty`, `txFrom` |
 | `Hyped`, `BoostApplied`, `Allocation` | history (Allocation covers ALLOCATE / DEALLOCATE / SWEEP) |
+| `Chog` (id = tokenId) | `owner` (lowercase, kept current from the collection's `Transfer` events; zero address = burned), mint block and time, `transferCount`. This is how the app lists every Chog a wallet holds, including Chogs whose Daemon is not woken yet |
 | `Keeper` (id = bounty recipient) | `totalBounties`, `compounds`, `totalProfitCompounded` (gross) |
 | `Hyper` (id = hyper) | hype counts and totals |
 | `Stats` (id = `global`) | platform totals: `totalYield` (net), `totalGrossHarvest`, `totalBounties`, counts |
@@ -58,7 +59,7 @@ The public RPC is configured as a **fallback** with a 100-block window (`initial
 ## Setup
 ```bash
 cd indexer
-cp .env.example .env      # set ENVIO_API_TOKEN, ENVIO_DAEMON_IMPLEMENTATION, ENVIO_MOCK_CHOG, ENVIO_START_BLOCK
+cp .env.example .env      # set ENVIO_API_TOKEN, ENVIO_DAEMON_IMPLEMENTATION, ENVIO_MOCK_CHOG (required), ENVIO_START_BLOCK
 npm install
 npm run codegen           # writes .envio/ + envio-env.d.ts
 npm run dev               # needs Docker (Postgres + Hasura); GraphQL at http://localhost:8080/v1/graphql (admin secret: testing)
@@ -116,6 +117,27 @@ query Leaderboard($limit: Int = 20) {
 }
 ```
 Variants: most hyped (`order_by: { hypeCount: desc }`), most active (`compoundCount: desc`).
+
+### Chogs a wallet holds
+```graphql
+query Owned($owner: String!) {   # lowercase address
+  Chog(where: { owner: { _eq: $owner } }, order_by: { tokenId: asc }) { tokenId }
+}
+```
+
+### This week's leaderboard (a "season", Monday 00:00 UTC to Monday)
+Sum `yieldAmount` per `tokenId` over the season's events (the app does this in `frontend/lib/season.ts`):
+```graphql
+query Season($since: Int!, $limit: Int!) {
+  DaemonUpdate(where: { timestamp: { _gte: $since }, yieldAmount: { _gt: 0 } }, order_by: [{ blockNumber: desc }, { logIndex: desc }], limit: $limit) {
+    tokenId
+    yieldAmount
+  }
+}
+```
+
+### Names the app renames
+The app's queries rename a few fields with GraphQL aliases (`frontend/lib/indexer.ts`): `Compounded.keeper_id` as `caller`, `Hyped.hyper` as `from`, `Daemon.lastMood` as `mood`, `Daemon.id` as `account`.
 
 ### Top keepers
 ```graphql

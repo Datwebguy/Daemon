@@ -511,8 +511,8 @@ export function useOwnedChogs(owner: Address | undefined) {
       const candidates = new Set<bigint>(remembered(owner));
       if (indexerConfigured) {
         try {
-          const data = await gql<{ Daemon: { tokenId: unknown }[] }>(OWNED_QUERY, { owner });
-          for (const d of Array.isArray(data.Daemon) ? data.Daemon : []) {
+          const data = await gql<{ Chog: { tokenId: unknown }[] }>(OWNED_QUERY, { owner: owner.toLowerCase() });
+          for (const d of Array.isArray(data.Chog) ? data.Chog : []) {
             const id = toBigIntSafe(d?.tokenId);
             if (id !== undefined && id >= BigInt(0)) candidates.add(id);
           }

@@ -242,3 +242,31 @@ export function statsAfterCompound(s: StatsShape, profit: bigint, bounty: bigint
 export function statsAfterUpdate(s: StatsShape, yieldAmount: bigint): StatsShape {
   return { ...s, totalYield: s.totalYield + yieldAmount };
 }
+
+/** One Chog and its current holder (mirrors the Chog entity in schema.graphql). */
+export interface ChogShape {
+  readonly id: string;
+  readonly tokenId: bigint;
+  readonly owner: string;
+  readonly mintedAtBlock: number;
+  readonly mintedAtTimestamp: number;
+  readonly transferCount: number;
+}
+
+/** Applies one Transfer: the first one is the mint; later ones only change the owner. Owner is stored lowercase. */
+export function applyChogTransfer(
+  existing: ChogShape | undefined,
+  to: string,
+  tokenId: bigint,
+  blockNumber: number,
+  timestamp: number,
+): ChogShape {
+  return {
+    id: tokenId.toString(),
+    tokenId,
+    owner: to.toLowerCase(),
+    mintedAtBlock: existing?.mintedAtBlock ?? blockNumber,
+    mintedAtTimestamp: existing?.mintedAtTimestamp ?? timestamp,
+    transferCount: (existing?.transferCount ?? 0) + 1,
+  };
+}
