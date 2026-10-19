@@ -14,7 +14,7 @@ import { Wallet } from "./Wallet";
 type Tone = "--butter" | "--pink" | "--sky" | "--jelly";
 
 const NAV: { href: string; label: string; short: string; tone: Tone; icon: string }[] = [
-  { href: "/app", label: "Your den", short: "Den", tone: "--butter", icon: "M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z" },
+  { href: "/app", label: "Your den", short: "Den", tone: "--butter", icon: "M3 5h8v8H3zM13 5h8v5h-8zM13 12h8v7h-8zM3 15h8v4H3z" },
   { href: "/explore", label: "Find a Daemon", short: "Find", tone: "--pink", icon: "M11 4a7 7 0 1 1 0 14 7 7 0 0 1 0-14zm9 16-4.3-4.3" },
   { href: "/feed", label: "Live activity", short: "Live", tone: "--sky", icon: "M3 12h4l3-8 4 16 3-8h4" },
 ];
@@ -57,7 +57,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* desktop rail: glued to the left edge */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-28 flex-col border-r-4 border-[color:var(--st-line)] bg-[var(--surface)] lg:flex">
         <div className="flex justify-center pb-4 pt-5 [&>a>span]:text-[1.5rem]">
-          <Logo href="/app" />
+          <Logo href="/" />
         </div>
         <div aria-hidden className="mx-3 border-t-[3px] border-dashed border-[color:var(--st-line)] opacity-25" />
 
@@ -96,7 +96,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="flex h-16 items-stretch">
             <div className="title-slab shrink-0">
               <div className="slash ink-on flex h-full items-center pl-4 pr-10 sm:pr-14 lg:pl-8 lg:pr-16" style={{ background: `var(${here.tone})`, color: here.tone === "--jelly" ? "#fff" : INK }}>
-                <Logo href="/app" className="lg:hidden [&>span]:max-sm:text-[1.4rem]" />
+                <Logo href="/" className="lg:hidden [&>span]:max-sm:text-[1.4rem]" />
                 <div className="hidden leading-none lg:block">
                   <div className="text-[11px] font-bold uppercase tracking-[0.18em] opacity-70">{here.kicker}</div>
                   <div className="mt-1 font-display text-2xl">{here.title}</div>

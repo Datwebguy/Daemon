@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { ChogFace } from "@/components/ChogFace";
 import { Logo } from "../brand/Logo";
+import { ThemeToggle } from "../ThemeToggle";
 
-const COLS: { title: string; links: { href: string; label: string; external?: boolean }[] }[] = [
+type FooterLink = { href: string; label: string; external?: boolean };
+
+const COLS: { title: string; links: FooterLink[] }[] = [
   {
     title: "Use Daemon",
     links: [
@@ -15,8 +18,8 @@ const COLS: { title: string; links: { href: string; label: string; external?: bo
     title: "Learn",
     links: [
       { href: "/#how", label: "How it works" },
+      { href: "/#day", label: "A day with a Daemon" },
       { href: "/#moods", label: "Moods" },
-      { href: "/#earn", label: "Earn tips" },
       { href: "/#faq", label: "FAQ" },
     ],
   },
@@ -38,81 +41,106 @@ const COLS: { title: string; links: { href: string; label: string; external?: bo
   },
 ];
 
+function FooterLinkItem({ l }: { l: FooterLink }) {
+  const cls = "group inline-flex items-center gap-1.5 text-white/70 transition hover:text-butter";
+  const arrow = (
+    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 -translate-x-1 opacity-0 transition group-hover:translate-x-0 group-hover:opacity-100" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M7 17 17 7M9 7h8v8" />
+    </svg>
+  );
+  return l.external ? (
+    <a href={l.href} target="_blank" rel="noreferrer" className={cls}>
+      {l.label}
+      {arrow}
+    </a>
+  ) : (
+    <Link href={l.href} className={cls}>
+      {l.label}
+    </Link>
+  );
+}
+
 export function SiteFooter() {
   return (
-    <footer className="relative overflow-hidden">
+    <footer className="relative mt-24">
       {/* closing call to action */}
-      <div className="mx-auto max-w-6xl px-5 sm:px-8">
+      <div className="relative z-10 mx-auto max-w-6xl px-5 sm:px-8">
         <div
-          className="sticker relative overflow-hidden !rounded-[2.5rem] bg-gradient-to-br from-[#ffe6f1] via-white to-[#e9e2ff] px-6 py-16 text-[#1e1238] sm:px-14 sm:py-20"
+          className="sticker relative overflow-hidden !rounded-[2.5rem] !bg-[linear-gradient(135deg,color-mix(in_oklab,var(--pink)_28%,var(--st-bg)),var(--st-bg)_55%,color-mix(in_oklab,var(--jelly)_28%,var(--st-bg)))] !text-[var(--st-fg)] px-6 py-14 sm:px-14 sm:py-16"
           data-reveal
         >
-          <div aria-hidden className="absolute -right-10 -bottom-16 h-72 w-72 opacity-90 sm:h-96 sm:w-96">
-            <ChogFace mood={3} boosted className="h-full w-full" />
+          <div className="grid items-center gap-8 md:grid-cols-[1fr_auto]">
+            <div>
+              <h2 className="font-display text-[clamp(2.2rem,5vw,3.8rem)] leading-[1]">Your Chog is waiting to wake up.</h2>
+              <p className="mt-4 max-w-xl text-lg opacity-75">It takes about a minute, it&apos;s free on the test network, and you can take everything back any time.</p>
+              <Link href="/app" className="sticker sticker-pop squish mt-8 inline-flex items-center gap-3 !bg-jelly px-7 py-3.5 font-bold !text-white">
+                Wake your Daemon
+              </Link>
+            </div>
+            <div aria-hidden className="mx-auto hidden w-48 rotate-3 md:block lg:w-56">
+              <ChogFace mood={3} boosted className="aspect-square w-full" />
+            </div>
           </div>
-          <div className="relative max-w-xl">
-            <h2 className="font-display text-[clamp(2.2rem,5vw,3.8rem)] leading-[1]">Your Chog is waiting to wake up.</h2>
-            <p className="mt-5 text-lg text-[#1e1238]/70">It takes about a minute, it&apos;s free on the test network, and you can take everything back any time.</p>
-            <Link
-              href="/app"
-              className="sticker sticker-pop squish mt-9 inline-flex items-center gap-3 !bg-jelly px-7 py-3.5 font-bold !text-white"
+        </div>
+      </div>
+
+      {/* the dark footer proper: zigzag edge, tucked behind the call to action */}
+      <div className="zigzag-top relative -mt-14 bg-night pt-28 text-white">
+        <div className="mx-auto max-w-6xl px-5 sm:px-8">
+          <div className="grid gap-12 md:grid-cols-[1.25fr_repeat(4,1fr)]">
+            <div>
+              <Logo light />
+              <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/65">A little spirit for every Chog. It saves, earns and has opinions about it.</p>
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <ThemeToggle compact />
+              </div>
+            </div>
+            {COLS.map((c) => (
+              <nav key={c.title} aria-label={c.title}>
+                <h3 className="font-display text-lg text-white">{c.title}</h3>
+                <ul className="mt-4 space-y-3 text-sm">
+                  {c.links.map((l) => (
+                    <li key={l.label}>
+                      <FooterLinkItem l={l} />
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            ))}
+          </div>
+        </div>
+
+        {/* giant wordmark cropped by the bottom edge, with a real Chog sitting on it */}
+        <div className="relative mt-20 overflow-hidden select-none" aria-hidden>
+          <div className="relative mx-auto max-w-[96rem] px-2">
+            <div className="absolute bottom-[58%] right-[9%] z-10 w-[clamp(4.5rem,10vw,8rem)] -rotate-6">
+              <ChogFace mood={1} seed={2} className="aspect-square w-full" />
+            </div>
+            <div
+              className="bg-gradient-to-r from-pink via-butter to-sky bg-clip-text pb-0 text-center font-display text-[clamp(6rem,27vw,24rem)] leading-[0.74] text-transparent"
+              style={{ marginBottom: "-0.12em" }}
             >
-              Wake your Daemon
-            </Link>
+              daemon
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="mx-auto mt-20 max-w-6xl px-5 sm:px-8">
-        <div className="grid gap-10 border-t border-line pt-12 md:grid-cols-[1.3fr_repeat(4,1fr)]">
-          <div>
-            <Logo />
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-dim">A little spirit for every Chog. It saves, earns and has opinions about it.</p>
+        <div className="relative z-10 border-t-[3px] border-white/15 bg-night">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-6 text-xs text-white/55 sm:px-8">
+            <span>© {new Date().getFullYear()} Daemon. Built for the Chog community on Monad. Test network, test tokens, no real value.</span>
+            <span>
+              Photos by{" "}
+              <a href="https://unsplash.com/@eiskonen" target="_blank" rel="noreferrer" className="underline-offset-2 hover:text-white hover:underline">
+                Hans Eiskonen
+              </a>{" "}
+              and{" "}
+              <a href="https://unsplash.com/@iamrohitchoudhari" target="_blank" rel="noreferrer" className="underline-offset-2 hover:text-white hover:underline">
+                Rohit Choudhari
+              </a>{" "}
+              on Unsplash
+            </span>
           </div>
-          {COLS.map((c) => (
-            <nav key={c.title} aria-label={c.title}>
-              <h3 className="text-sm font-semibold">{c.title}</h3>
-              <ul className="mt-4 space-y-2.5 text-sm">
-                {c.links.map((l) => (
-                  <li key={l.label}>
-                    {l.external ? (
-                      <a href={l.href} target="_blank" rel="noreferrer" className="text-dim transition hover:text-fg">
-                        {l.label}
-                      </a>
-                    ) : (
-                      <Link href={l.href} className="text-dim transition hover:text-fg">
-                        {l.label}
-                      </Link>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          ))}
         </div>
-      </div>
-
-      {/* giant wordmark with a peeking Daemon */}
-      <div className="relative mx-auto mt-16 max-w-6xl px-5 sm:px-8" aria-hidden>
-        <div className="absolute left-[58%] top-[-2.6rem] h-24 w-24 sm:top-[-4.2rem] sm:h-36 sm:w-36">
-          <ChogFace mood={1} track className="h-full w-full" />
-        </div>
-        <div className="select-none font-display text-[clamp(5rem,23vw,17rem)] font-extrabold leading-[0.78] tracking-[-0.06em] text-jelly/15">daemon</div>
-      </div>
-
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-8 text-xs text-dim sm:px-8">
-        <span>© {new Date().getFullYear()} Daemon. Built for the Chog community on Monad. Test network, test tokens, no real value.</span>
-        <span>
-          Photos by{" "}
-          <a href="https://unsplash.com/@eiskonen" target="_blank" rel="noreferrer" className="underline-offset-2 hover:underline">
-            Hans Eiskonen
-          </a>{" "}
-          and{" "}
-          <a href="https://unsplash.com/@iamrohitchoudhari" target="_blank" rel="noreferrer" className="underline-offset-2 hover:underline">
-            Rohit Choudhari
-          </a>{" "}
-          on Unsplash
-        </span>
       </div>
     </footer>
   );
