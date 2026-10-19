@@ -141,6 +141,22 @@ contract MockChogTest is Test {
         chog.freeMint();
     }
 
+    /// EIP-7702-upgraded wallets are EOAs with code that may not implement onERC721Received.
+    /// A free mint must still work for them (it uses _mint, not _safeMint).
+    function test_freeMint_worksForWalletsWithCodeAndNoReceiver() public {
+        address upgraded = makeAddr("upgraded7702");
+        vm.etch(upgraded, hex"ef0100d8da6bf26964af9d7eed9e03e53415d37aa96045"); // 7702 delegation marker (23 bytes)
+        vm.prank(upgraded);
+        uint256 id = chog.freeMint();
+        assertEq(chog.ownerOf(id), upgraded);
+
+        address noReceiver = makeAddr("contractWithoutReceiver");
+        vm.etch(noReceiver, hex"600160005260206000f3"); // returns a non-selector word to every call
+        vm.prank(noReceiver);
+        uint256 id2 = chog.freeMint();
+        assertEq(chog.ownerOf(id2), noReceiver);
+    }
+
     function test_freeMint_maxSupply() public {
         for (uint256 i; i < 10; ++i) {
             _mint(address(uint160(0x1000 + i)));

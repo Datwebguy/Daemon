@@ -4,7 +4,7 @@ import { usePrivy } from "@privy-io/react-auth";
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { toast } from "sonner";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
-import { errorMessage } from "./format";
+import { friendlyError, isUserRejection } from "./errors";
 
 export type AuthState = {
   provider: "privy" | "injected";
@@ -52,13 +52,12 @@ export function InjectedAuthBridge({ children }: { children: ReactNode }) {
       login: () => {
         const c = connectors[0];
         if (!c) {
-          toast.error("No browser wallet found", { description: "Install a wallet extension (e.g. MetaMask) and reload." });
+          toast.error("No wallet found", { description: "Install a wallet like MetaMask, then reload the page." });
           return;
         }
         connectAsync({ connector: c }).catch((err: unknown) => {
-          const msg = errorMessage(err);
-          if (/reject|denied|cancel/i.test(msg)) toast.error("Wallet connection cancelled");
-          else toast.error("Couldn't connect wallet", { description: msg.slice(0, 280) });
+          if (isUserRejection(err)) toast.message("Sign-in cancelled");
+          else toast.error("Couldn't sign you in", { description: friendlyError(err) });
         });
       },
       logout: () => disconnect(),

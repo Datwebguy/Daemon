@@ -8,28 +8,24 @@ import { useAccount, useConfig, useSwitchChain } from "wagmi";
 import { waitForTransactionReceipt } from "wagmi/actions";
 import type { Config } from "wagmi";
 import { CHAIN_ID, txUrl } from "./config";
-import { errorMessage } from "./format";
+import { friendlyError, isUserRejection } from "./errors";
 
-function ExplorerLink({ hash }: { hash: Hash }) {
+function ReceiptLink({ hash }: { hash: Hash }) {
   return (
-    <a href={txUrl(hash)} target="_blank" rel="noreferrer" className="underline font-medium">
-      View on Monadscan ↗
+    <a href={txUrl(hash)} target="_blank" rel="noreferrer" className="font-medium underline">
+      View receipt
     </a>
   );
 }
 
-/** Broadcast, but we couldn't confirm the receipt (RPC hiccup / timeout). The tx may still land. */
+/** Sent, but we couldn't confirm it yet (network hiccup). It may still go through. */
 export type UnknownTx = { status: "unknown"; transactionHash: Hash };
 export type TxResult = TransactionReceipt | UnknownTx | undefined;
 
 /**
- * Runs a write with toasts: "confirm in wallet" -> "pending" (explorer link) -> success/fail.
- * `send` receives the wagmi config and must return the tx hash. Callers simulate first
- * (wagmi `simulateContract`) so reverts surface before signing; gas is left to the
- * wallet's estimate (Monad charges the gas *limit*, so no inflated manual limits).
- *
- * If the tx was broadcast but waiting for its receipt throws, the result is `{ status: "unknown" }`
- * and the toast says "submitted, confirmation unknown" (with the explorer link), never "failed".
+ * Runs a wallet action with friendly toasts: "approve in your wallet" -> "working on it" -> done.
+ * Callers simulate first so problems surface before anyone signs. Errors are translated into
+ * plain language (see lib/errors.ts). Gas is left to the wallet's estimate.
  */
 export function useTx() {
   const config = useConfig();
@@ -42,62 +38,63 @@ export function useTx() {
     async (
       label: string,
       send: (config: Config) => Promise<Hash>,
-      opts?: { onSuccess?: (r: TransactionReceipt) => void },
+      opts?: { onSuccess?: (r: TransactionReceipt) => void; done?: string },
     ): Promise<TxResult> => {
       if (!isConnected) {
-        toast.error("Sign in first");
+        toast.error("Sign in first", { description: "Connect to start using your Daemon." });
         return undefined;
       }
-      const id = toast.loading(`${label}: confirm in your wallet…`);
+      const id = toast.loading(label, { description: "Approve it in your wallet…" });
       setPending(label);
       let hash: Hash | undefined;
       try {
         if (chainId !== CHAIN_ID) {
-          toast.loading(`${label}: switching to Monad Testnet…`, { id });
+          toast.loading(label, { id, description: "Switching your wallet to Monad…" });
           await switchChainAsync({ chainId: CHAIN_ID });
         }
         hash = await send(config);
       } catch (err) {
-        const msg = errorMessage(err);
-        const rejected = /reject|denied|cancel/i.test(msg);
-        toast.error(rejected ? `${label}: cancelled` : `${label} failed`, {
-          id,
-          description: rejected ? undefined : msg.slice(0, 280),
-        });
+        if (isUserRejection(err)) toast.message(`${label} cancelled`, { id, description: undefined });
+        else toast.error(`Couldn't ${label.toLowerCase()}`, { id, description: friendlyError(err) });
         setPending(null);
         return undefined;
       }
 
       const sent = hash;
       try {
-        toast.loading(`${label}: pending…`, { id, description: <ExplorerLink hash={sent} /> });
+        toast.loading(label, { id, description: "Working on it…" });
         let receipt: TransactionReceipt;
         try {
           receipt = await waitForTransactionReceipt(config, { hash: sent, chainId: CHAIN_ID });
         } catch {
-          // Broadcast succeeded; only the confirmation lookup failed. Don't claim failure.
-          toast.warning(`${label}: submitted, confirmation unknown`, {
+          toast.warning(`${label}: sent`, {
             id,
             description: (
               <span>
-                Check the explorer before retrying. <ExplorerLink hash={sent} />
+                It&apos;s on its way but we couldn&apos;t confirm it yet. Check before trying again. <ReceiptLink hash={sent} />
               </span>
             ),
           });
           void queryClient.invalidateQueries();
-          // Refetch again a bit later in case it lands after the lookup gave up.
           setTimeout(() => void queryClient.invalidateQueries(), 15_000);
           return { status: "unknown", transactionHash: sent };
         }
         if (receipt.status === "success") {
-          toast.success(`${label}: confirmed`, { id, description: <ExplorerLink hash={sent} /> });
+          toast.success(opts?.done ?? `${label}: done`, { id, description: <ReceiptLink hash={sent} /> });
           try {
             opts?.onSuccess?.(receipt);
           } catch {
-            /* a UI follow-up failing must not turn a confirmed tx into an error */
+            /* a UI follow-up failing must not turn a confirmed action into an error */
           }
         } else {
-          toast.error(`${label}: reverted`, { id, description: <ExplorerLink hash={sent} /> });
+          toast.error(`Couldn't ${label.toLowerCase()}`, {
+            id,
+            description: (
+              <span>
+                The network refused it and nothing changed. <ReceiptLink hash={sent} />
+              </span>
+            ),
+          });
         }
         await queryClient.invalidateQueries();
         return receipt;

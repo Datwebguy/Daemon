@@ -50,8 +50,10 @@ abstract contract DaemonDeploy {
         return Params({
             deployer: deployer,
             wmonLiquidity: 2 ether,
-            stableRewards: 100_000e18,
-            degenRewards: 200_000e18,
+            // Emissions are fixed per vault and shared by all depositors, so yield per dUSD falls as TVL grows.
+            // These sizes (DMNR at $0.5) give believable play-money returns for a few dozen testers.
+            stableRewards: 1_000e18,
+            degenRewards: 3_000e18,
             rewardDuration: 30 days,
             sourceCap: 1_000_000e18
         });

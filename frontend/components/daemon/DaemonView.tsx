@@ -1,36 +1,32 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useState } from "react";
 import { getAddress } from "viem";
 import { useAccount } from "wagmi";
-import { addressUrl, contracts } from "@/lib/config";
-import { fmtAgo, fmtUnits, shortAddr } from "@/lib/format";
-import { useBalances, useChog, useDaemonAddress, useDaemonState, useNow, useProtocol } from "@/lib/hooks";
-import { vibeName } from "@/lib/mood";
+import { contracts } from "@/lib/config";
+import { fmtAgo, fmtDuration, fmtUnits, shortAddr } from "@/lib/format";
+import { useChog, useDaemonAddress, useDaemonState, useNow, useProtocol } from "@/lib/hooks";
+import { BACKGROUNDS, BODIES, EYES, vibeName } from "@/lib/mood";
 import { DaemonAvatar } from "../DaemonAvatar";
-import { Card, Empty, Loading, Notice, Pill, Stat } from "../ui";
+import { cx, Empty, Loading, Segmented, Stat } from "../ui";
 import { CompoundPanel } from "./CompoundPanel";
 import { DeployPanel } from "./DeployPanel";
 import { HypePanel } from "./HypePanel";
-import { ShareCard } from "./ShareCard";
+import { ShareButton } from "./ShareCard";
 import { SweepPanel } from "./SweepPanel";
 import type { DaemonCtx } from "./types";
 import { YieldPanel } from "./YieldPanel";
 
-function CopyAddr({ value }: { value: string }) {
-  return (
-    <span className="inline-flex items-center gap-2">
-      <a href={addressUrl(value)} target="_blank" rel="noreferrer" className="font-mono text-sm hover:underline">
-        {shortAddr(value, 6)}
-      </a>
-      <button
-        className="rounded-lg border border-line px-2 py-0.5 text-xs text-dim hover:bg-muted"
-        onClick={() => void navigator.clipboard?.writeText(value)}
-      >
-        copy
-      </button>
-    </span>
-  );
+type Tab = "harvest" | "hype" | "save";
+
+/** `?tab=hype` / `?tab=vaults` / `?tab=harvest` links straight to a tab. */
+function tabFromQuery(q: string | null): Tab | null {
+  if (q === "hype") return "hype";
+  if (q === "harvest") return "harvest";
+  if (q === "vaults" || q === "savings" || q === "save") return "save";
+  return null;
 }
 
 export function DaemonView({ tokenId }: { tokenId: bigint }) {
@@ -40,139 +36,161 @@ export function DaemonView({ tokenId }: { tokenId: bigint }) {
   const chog = useChog(tokenId);
   const daemon = useDaemonAddress(tokenId);
   const state = useDaemonState(daemon.address, daemon.deployed);
-  const bal = useBalances(daemon.address, protocol.asset?.address, protocol.chog?.address);
+  const queryTab = tabFromQuery(useSearchParams().get("tab"));
+  const [tab, setTab] = useState<Tab | null>(null);
 
   if (!contracts.mockChog) {
     return (
-      <Empty emoji="🚧" title="Contracts not deployed yet">
-        Set NEXT_PUBLIC_MOCK_CHOG (and the other addresses in .env.example) to load Daemons.
+      <Empty emoji="🌙" title="Daemons are still waking up">
+        The app opens as soon as the network is ready. Check back shortly.
       </Empty>
     );
   }
-  if (chog.isLoading) return <Loading label={`Loading Chog #${tokenId.toString()}…`} />;
-  if (chog.error) return <Notice tone="error" title="Couldn't reach Monad Testnet">{chog.error.message.slice(0, 240)}</Notice>;
+  if (chog.isLoading) return <Loading label={`Finding Chog #${tokenId.toString()}…`} />;
+  if (chog.error)
+    return (
+      <Empty emoji="📡" title="We couldn't reach the network">
+        It usually comes back in a moment. Try refreshing the page.
+      </Empty>
+    );
   if (chog.exists === false)
     return (
-      <Empty emoji="🔍" title={`Chog #${tokenId.toString()} doesn't exist`}>
-        It hasn&apos;t been minted yet. <Link href="/explore" className="underline">Try another ID</Link>.
+      <Empty emoji="🔍" title={`Chog #${tokenId.toString()} doesn't exist yet`}>
+        Nobody has minted it.{" "}
+        <Link href="/explore" className="font-semibold text-jelly underline-offset-4 hover:underline">
+          Try another number
+        </Link>
       </Empty>
     );
 
   const owner = state.owner ?? chog.owner;
   const isOwner = Boolean(user && owner && getAddress(user) === getAddress(owner));
-  const boosted = state.boost ? Number(state.boost.expiresAt) > now : false;
+  const boostLive = state.boost ? Number(state.boost.expiresAt) > now && state.boost.multiplierBps > BigInt(10_000) : false;
+  const mult = boostLive && state.boost ? Number(state.boost.multiplierBps) / 10_000 : undefined;
   const dec = protocol.asset?.decimals ?? 18;
   const sym = protocol.asset?.symbol ?? "";
-
   const ctx: DaemonCtx | undefined = daemon.address
     ? { tokenId, account: daemon.address, deployed: daemon.deployed, user, isOwner, protocol, state }
     : undefined;
+  const awake = Boolean(ctx && daemon.deployed);
+  const empty = state.totalAssets !== undefined && state.totalAssets === BigInt(0);
+  const current: Tab = tab ?? queryTab ?? (isOwner && empty ? "save" : "harvest");
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-      {/* left: identity */}
-      <div className="space-y-6">
-        <Card>
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-black">Chog #{tokenId.toString()}</h1>
-            {isOwner ? <Pill className="bg-monad/15 text-monad-700 dark:text-monad-200">You own this</Pill> : <Pill className="bg-muted text-dim">Visitor</Pill>}
-          </div>
-          <div className="mt-6">
-            <DaemonAvatar image={chog.metadata?.image} mood={daemon.deployed ? state.mood : undefined} message={state.lastMessage} boosted={boosted} />
-          </div>
-          <dl className="mt-6 space-y-2 text-sm">
-            <div className="flex justify-between gap-2">
-              <dt className="text-dim">Owner</dt>
-              <dd>{owner ? <CopyAddr value={owner} /> : "–"}</dd>
-            </div>
-            <div className="flex justify-between gap-2">
-              <dt className="text-dim">Daemon account</dt>
-              <dd>{daemon.address ? <CopyAddr value={daemon.address} /> : daemon.isLoading ? "…" : "unknown"}</dd>
-            </div>
-            <div className="flex justify-between gap-2">
-              <dt className="text-dim">Status</dt>
-              <dd>{daemon.deployed ? <span className="text-emerald-600 dark:text-emerald-400">Active</span> : "Not deployed"}</dd>
-            </div>
-            {state.lastActivityAt !== undefined && (
-              <div className="flex justify-between gap-2">
-                <dt className="text-dim">Last activity</dt>
-                <dd>{fmtAgo(Number(state.lastActivityAt), now)}</dd>
-              </div>
+    <div className="space-y-8">
+      {/* title row */}
+      <header className="flex flex-wrap items-center gap-x-4 gap-y-3">
+        <Link href={isOwner ? "/app" : "/explore"} className="grid h-10 w-10 place-items-center rounded-full clay" aria-label="Back">
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 6l-6 6 6 6" />
+          </svg>
+        </Link>
+        <h1 className="font-display text-[clamp(2rem,4.5vw,3rem)] font-extrabold leading-none tracking-tight">Chog #{tokenId.toString()}</h1>
+        <span className={cx("rounded-full px-3 py-1 text-sm font-semibold", isOwner ? "bg-jelly text-white" : "bg-surface-2 text-dim")}>
+          {isOwner ? "Yours" : owner ? `Held by ${shortAddr(owner)}` : "Visitor"}
+        </span>
+        <div className="ml-auto">{ctx && awake && <ShareButton ctx={ctx} image={chog.metadata?.image} />}</div>
+      </header>
+
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:gap-10">
+        {/* stage */}
+        <aside className="lg:sticky lg:top-24 lg:self-start">
+          <div className="clay rounded-[2.25rem] px-5 pb-7 pt-6">
+            <DaemonAvatar
+              image={chog.metadata?.image}
+              mood={awake ? state.mood : undefined}
+              message={awake ? state.lastMessage : undefined}
+              boosted={boostLive}
+              multiplier={mult}
+            />
+            {chog.traits && (
+              <dl className="mt-7 grid grid-cols-2 gap-2 text-sm">
+                <Trait k="Vibe" v={vibeName(chog.traits.vibe)} />
+                <Trait k="Body" v={BODIES[chog.traits.body] ?? "Mystery"} />
+                <Trait k="Eyes" v={EYES[chog.traits.eyes] ?? "Mystery"} />
+                <Trait k="Backdrop" v={BACKGROUNDS[chog.traits.background] ?? "Mystery"} />
+              </dl>
             )}
-          </dl>
-          {chog.traits && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Pill className="bg-muted">🎨 bg {chog.traits.background}</Pill>
-              <Pill className="bg-muted">🐸 body {chog.traits.body}</Pill>
-              <Pill className="bg-muted">👀 eyes {chog.traits.eyes}</Pill>
-              <Pill className="bg-monad/15 text-monad-700 dark:text-monad-200">✨ {vibeName(chog.traits.vibe)}</Pill>
-            </div>
+            {awake && daemon.address && (
+              <details className="mt-4 text-sm">
+                <summary className="cursor-pointer text-dim hover:text-fg">Daemon wallet details</summary>
+                <div className="mt-2 flex items-center justify-between gap-2 rounded-2xl bg-surface-2 px-3 py-2">
+                  <span className="truncate font-mono text-xs">{daemon.address}</span>
+                  <button className="shrink-0 text-xs font-semibold text-jelly" onClick={() => void navigator.clipboard?.writeText(daemon.address!)}>
+                    Copy
+                  </button>
+                </div>
+                {state.lastActivityAt !== undefined && <p className="mt-2 text-xs text-dim">Last active {fmtAgo(Number(state.lastActivityAt), now)}</p>}
+              </details>
+            )}
+          </div>
+        </aside>
+
+        {/* actions */}
+        <div className="space-y-6">
+          {ctx && !daemon.deployed && !daemon.isLoading && (
+            <DeployPanel tokenId={tokenId} user={user} isOwner={isOwner} canCreate={daemon.canCreate} onDeployed={() => void daemon.refetchCode()} />
           )}
-        </Card>
-        {ctx && daemon.deployed && <ShareCard ctx={ctx} image={chog.metadata?.image} />}
-      </div>
+          {!ctx && !daemon.isLoading && (
+            <Empty emoji="🌙" title="This Daemon can't be reached yet">
+              Check back in a little while.
+            </Empty>
+          )}
 
-      {/* right: economics */}
-      <div className="space-y-6">
-        {daemon.error && !daemon.address && (
-          <Notice tone="error" title="Couldn't compute the Daemon address">{daemon.error.message.slice(0, 240)}</Notice>
-        )}
-        {!daemon.address && !daemon.isLoading && !daemon.error && (
-          <Notice tone="warn" title="Daemon address unavailable">
-            Set NEXT_PUBLIC_DAEMON_ACCOUNT_IMPL (registry.account) or deploy a MockChog that exposes daemonOf().
-          </Notice>
-        )}
-        {ctx && !daemon.deployed && !daemon.isLoading && (
-          <DeployPanel tokenId={tokenId} user={user} isOwner={isOwner} canCreate={daemon.canCreate} onDeployed={() => void daemon.refetchCode()} />
-        )}
-        {protocol.warnings.length > 0 && (
-          <Notice tone="warn" title="Configuration warning">
-            <ul className="list-disc space-y-1 pl-4">
-              {protocol.warnings.map((w) => (
-                <li key={w} className="break-all">
-                  {w}
-                </li>
-              ))}
-            </ul>
-          </Notice>
-        )}
-        {/* Only decode failures mean "ABI may not match"; transient RPC errors are not that. */}
-        {ctx && daemon.deployed && state.decodeFailures > 0 && !state.isLoading && (
-          <Notice tone="warn" title="Some reads failed to decode">
-            The deployed account doesn&apos;t answer every IDaemonAccount view. The implementation address or ABI may not match the final deployment.
-          </Notice>
-        )}
-        {ctx && daemon.deployed && state.decodeFailures === 0 && state.transientFailures > 0 && !state.isLoading && (
-          <Notice tone="info" title="Some values are temporarily unavailable">
-            The RPC didn&apos;t answer every read. They will refresh automatically.
-          </Notice>
-        )}
-
-        {ctx && daemon.deployed && (
-          <>
-            <Card title="📊 Balances">
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <Stat label="Total assets" value={`${fmtUnits(state.totalAssets, dec)} ${sym}`} />
-                <Stat label="Lifetime yield" value={`+${fmtUnits(state.lifetimeYield, dec)} ${sym}`} />
-                <Stat label={`Idle ${sym}`} value={fmtUnits(bal.asset, dec)} />
-                <Stat label="MON" value={fmtUnits(bal.mon, 18)} />
-                {protocol.chog && <Stat label={`$${protocol.chog.symbol}`} value={fmtUnits(bal.chog, protocol.chog.decimals, 2)} />}
+          {ctx && awake && (
+            <>
+              <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+                <Stat label="Saved" value={`${fmtUnits(state.totalAssets, dec, 2)}`} hint={sym} />
+                <Stat label="Earned so far" value={`+${fmtUnits(state.lifetimeYield, dec, 2)}`} hint={sym} tone="mint" />
+                <Stat label="Boost" value={mult ? `${mult.toFixed(2)}×` : "1.00×"} hint={boostLive && state.boost ? `${fmtDuration(Number(state.boost.expiresAt) - now)} left` : "hype to boost"} tone={mult ? "spark" : undefined} />
+                <Stat
+                  label="Next harvest"
+                  value={
+                    state.nextCompoundAt !== undefined && Number(state.nextCompoundAt) > now ? fmtDuration(Number(state.nextCompoundAt) - now) : "Ready"
+                  }
+                  hint={state.nextCompoundAt !== undefined && Number(state.nextCompoundAt) > now ? "resting" : "anyone can do it"}
+                  tone="jelly"
+                />
               </div>
-            </Card>
-            <div className="grid gap-6 xl:grid-cols-2">
-              <CompoundPanel ctx={ctx} />
-              <HypePanel ctx={ctx} />
-            </div>
-            <YieldPanel ctx={ctx} />
-            <SweepPanel ctx={ctx} />
-            {!isOwner && (
-              <p className="text-center text-xs text-dim">
-                Deposits, withdrawals and sweeps are owner-only. You can still compound (and earn the bounty) or hype this Daemon.
-              </p>
-            )}
-          </>
-        )}
+
+              <section className="clay rounded-[2rem] p-5 sm:p-7">
+                <Segmented<Tab>
+                  label="What do you want to do?"
+                  value={current}
+                  onChange={setTab}
+                  options={[
+                    { value: "harvest", label: "Harvest" },
+                    { value: "hype", label: "Hype" },
+                    { value: "save", label: isOwner ? "Savings" : "Vaults" },
+                  ]}
+                />
+                <div key={current} className="mt-6" style={{ animation: "rise .4s ease both" }}>
+                  {current === "harvest" && <CompoundPanel ctx={ctx} />}
+                  {current === "hype" && <HypePanel ctx={ctx} />}
+                  {current === "save" && <YieldPanel ctx={ctx} />}
+                </div>
+              </section>
+
+              <SweepPanel ctx={ctx} />
+
+              {!isOwner && (
+                <p className="text-center text-sm text-dim">
+                  This isn&apos;t your Chog, but you can still harvest it (and keep the tip) or hype it to cheer it on.
+                </p>
+              )}
+            </>
+          )}
+        </div>
       </div>
+    </div>
+  );
+}
+
+function Trait({ k, v }: { k: string; v: string }) {
+  return (
+    <div className="rounded-2xl bg-surface-2 px-3 py-2">
+      <dt className="text-xs text-dim">{k}</dt>
+      <dd className="font-semibold">{v}</dd>
     </div>
   );
 }

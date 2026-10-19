@@ -123,7 +123,10 @@ contract MockChog is ERC721, IChogTraits {
         tokenId = ++totalSupply;
         ++mintedBy[msg.sender];
         _traits[tokenId] = _rollTraits(tokenId, msg.sender);
-        _safeMint(msg.sender, tokenId);
+        // Plain _mint, not _safeMint: wallets upgraded with EIP-7702 (common on Monad) are EOAs with code and
+        // often cannot answer onERC721Received, which would make a free mint revert for them. The recipient is
+        // always the caller, so there is nothing to protect, and skipping the callback also removes a reentrancy hook.
+        _mint(msg.sender, tokenId);
     }
 
     /// @dev Cheap deterministic trait roll; each trait is a byte of the hash mod 5.

@@ -4,12 +4,14 @@ import { useState } from "react";
 import { simulateContract, writeContract } from "wagmi/actions";
 import { daemonAccountAbi } from "@/lib/abis";
 import { CHAIN_ID } from "@/lib/config";
-import { fmtUnits, shortAddr } from "@/lib/format";
+import { fmtUnits } from "@/lib/format";
 import { useTx } from "@/lib/tx";
-import { Button, Card, Dialog } from "../ui";
+import { Button, Dialog } from "../ui";
 import type { DaemonCtx } from "./types";
 
-/** Owner-only: exits every source and sends assets, rewards, pots and MON to the owner. */
+const LABEL = "Take everything out";
+
+/** Holder only: empties every vault and sends it all, plus the hype jar, to the holder's wallet. */
 export function SweepPanel({ ctx }: { ctx: DaemonCtx }) {
   const { account, deployed, user, isOwner, protocol, state } = ctx;
   const [open, setOpen] = useState(false);
@@ -18,49 +20,60 @@ export function SweepPanel({ ctx }: { ctx: DaemonCtx }) {
   const sym = protocol.asset?.symbol ?? "";
 
   const sweep = async () => {
-    const r = await run("Sweep to wallet", async (config) => {
-      const { request } = await simulateContract(config, {
-        address: account,
-        abi: daemonAccountAbi,
-        functionName: "sweepToOwner",
-        account: user,
-        chainId: CHAIN_ID,
-      });
-      return writeContract(config, request);
-    });
-    // Only close on a confirmed success (not on revert or unknown confirmation).
+    const r = await run(
+      LABEL,
+      async (config) => {
+        const { request } = await simulateContract(config, {
+          address: account,
+          abi: daemonAccountAbi,
+          functionName: "sweepToOwner",
+          account: user,
+          chainId: CHAIN_ID,
+        });
+        return writeContract(config, request);
+      },
+      { done: "Everything is in your wallet" },
+    );
     if (r?.status === "success") setOpen(false);
   };
 
   return (
-    <Card title="🧹 Exit" className="border-rose-500/30">
-      <p className="text-sm text-dim">
-        Non-custodial exit: pull everything out of every vault and send it, plus any unused boost pot and MON, to your wallet. Always
-        available to the current Chog holder.
-      </p>
-      <Button variant="danger" className="mt-4 w-full" onClick={() => setOpen(true)} loading={pending === "Sweep to wallet"}>
-        Sweep All to My Wallet
+    <section className="flex flex-col gap-4 rounded-[1.75rem] border border-dashed border-line p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+      <div>
+        <h2 className="font-display text-lg font-bold">Take everything out</h2>
+        <p className="mt-1 max-w-md text-sm text-dim">Empty every vault and the hype jar straight into your wallet. Always available to you, no questions asked.</p>
+      </div>
+      <Button variant="ghost" onClick={() => setOpen(true)} loading={pending === LABEL} className="shrink-0">
+        Take it all out
       </Button>
-      <Dialog open={open} onClose={() => setOpen(false)} title="Sweep everything?">
-        <ul className="space-y-1 text-sm">
-          <li>
-            • ~{fmtUnits(state.totalAssets, protocol.asset?.decimals ?? 18)} {sym} across all sources + idle
-          </li>
-          <li>• Boost pot: {fmtUnits(state.boost?.potMon, 18)} MON{protocol.chog ? ` + ${fmtUnits(state.boost?.potChog, protocol.chog.decimals)} ${protocol.chog.symbol}` : ""}</li>
-          <li>
-            • Destination: <span className="font-mono">{shortAddr(user, 6)}</span>
-          </li>
-        </ul>
-        <p className="mt-3 text-xs text-dim">Your Daemon stops earning until you deposit again.</p>
-        <div className="mt-5 flex justify-end gap-2">
+      <Dialog open={open} onClose={() => setOpen(false)} title="Take everything out?">
+        <div className="clay-sunk space-y-2 rounded-2xl p-4 text-sm">
+          <Row k="Savings" v={`about ${fmtUnits(state.totalAssets, protocol.asset?.decimals ?? 18)} ${sym}`} />
+          <Row
+            k="Hype jar"
+            v={`${fmtUnits(state.boost?.potMon, 18)} MON${protocol.chog ? ` + ${fmtUnits(state.boost?.potChog, protocol.chog.decimals)} ${protocol.chog.symbol}` : ""}`}
+          />
+          <Row k="Goes to" v="Your wallet" />
+        </div>
+        <p className="mt-4 text-sm text-dim">Your Daemon will stop earning until you put money back in. Its mood and history stay.</p>
+        <div className="mt-6 flex justify-end gap-2">
           <Button variant="ghost" onClick={() => setOpen(false)}>
-            Cancel
+            Keep it working
           </Button>
-          <Button variant="danger" onClick={sweep} loading={pending === "Sweep to wallet"}>
-            Yes, sweep it
+          <Button variant="danger" onClick={sweep} loading={pending === LABEL}>
+            Yes, take it all out
           </Button>
         </div>
       </Dialog>
-    </Card>
+    </section>
+  );
+}
+
+function Row({ k, v }: { k: string; v: string }) {
+  return (
+    <div className="flex justify-between gap-4">
+      <span className="text-dim">{k}</span>
+      <span className="text-right font-semibold tabular-nums">{v}</span>
+    </div>
   );
 }

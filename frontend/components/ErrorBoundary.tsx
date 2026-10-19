@@ -15,7 +15,7 @@ export class ErrorBoundary extends Component<
 
   render() {
     if (this.state.failed) {
-      return this.props.fallback ?? <div className="rounded-2xl bg-muted px-4 py-3 text-sm text-dim">Couldn&apos;t display this item.</div>;
+      return this.props.fallback ?? <div className="rounded-2xl bg-surface-2 px-4 py-3 text-sm text-dim">This item couldn&apos;t be shown.</div>;
     }
     return this.props.children;
   }

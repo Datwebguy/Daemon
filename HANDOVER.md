@@ -36,6 +36,18 @@ NEXT_PUBLIC_INDEXER_URL=...
 
 8. `npm run build` and deploy frontend (Vercel or similar)
 
+## Rehearse Locally First (recommended)
+
+Fork Monad testnet so the canonical ERC-6551 registry exists, then deploy the real stack to the fork:
+
+```bash
+anvil --fork-url https://testnet-rpc.monad.xyz --chain-id 10143 --block-time 1
+cd contracts
+forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast --private-key <anvil dev key> --slow
+```
+
+Copy the addresses from `contracts/deployments/monad-testnet.json` into `frontend/.env.local` (with `NEXT_PUBLIC_RPC_URL=http://127.0.0.1:8545`), then `npm run dev`. Use `cast send` to mint, wake, deposit and hype, and `cast rpc evm_increaseTime` to fast-forward cooldowns. Delete `contracts/deployments/monad-testnet.json` and `contracts/broadcast/` afterwards so local runs never get committed.
+
 ## Testnet Operations
 
 - Testnet was reset from genesis on 2025-12-16. After any reset, redeploy and re-verify all addresses.

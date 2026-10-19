@@ -8,15 +8,15 @@ const ThemeContext = createContext<{ theme: Theme; toggle: () => void }>({ theme
 export const useTheme = () => useContext(ThemeContext);
 
 /** Inline script for <head>: applies the saved/preferred theme before paint. */
-export const themeInitScript = `(function(){try{var t=localStorage.getItem('daemon-theme');if(!t){t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'}document.documentElement.classList.toggle('dark',t==='dark');document.documentElement.dataset.theme=t}catch(e){document.documentElement.classList.add('dark')}})();`;
+export const themeInitScript = `(function(){try{var t=localStorage.getItem('daemon-theme');if(!t){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}document.documentElement.classList.toggle('dark',t==='dark');document.documentElement.dataset.theme=t}catch(e){}})();`;
 
 function readTheme(): Theme {
-  if (typeof document === "undefined") return "dark";
+  if (typeof document === "undefined") return "light";
   return document.documentElement.classList.contains("dark") ? "dark" : "light";
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
     // sync with whatever the init script applied

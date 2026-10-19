@@ -97,6 +97,12 @@ Network: Monad Testnet (Chain ID 10143). Faucet: https://faucet.monad.xyz
 7. Hit "Sweep All to My Wallet" to prove non-custodial exit
 8. Share performance card
 
+## The Frontend
+
+- **Landing page (`/`)**: an animated Daemon hero, the six-step story, a moods gallery, a live tip calculator, FAQ and footer.
+- **App (`/app`, `/daemon/[id]`, `/explore`, `/feed`)**: a plain-language interface with no technical wording. Your den lists your Chogs with a getting-started checklist; each Daemon page has Harvest, Hype and Vaults tabs, a share card, and a one-tap "take everything out". `?tab=hype` and `?tab=vaults` deep-link to a tab.
+- Design notes: Bricolage Grotesque and Figtree type, a "clay and jelly" palette with light and dark themes, a creature drawn in SVG with five moods whose eyes follow the cursor, and Unsplash wallpapers (credited in the footer).
+
 ## Core Features
 
 - ERC-6551 token-bound account per Chog (canonical registry)

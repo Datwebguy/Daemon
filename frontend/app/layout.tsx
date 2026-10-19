@@ -1,38 +1,43 @@
 import type { Metadata, Viewport } from "next";
+import { Bricolage_Grotesque, Figtree } from "next/font/google";
 import type { ReactNode } from "react";
-import { ContractsBanner } from "@/components/ContractsBanner";
-import { Header } from "@/components/Header";
 import { Providers } from "@/components/Providers";
 import { themeInitScript } from "@/components/ThemeProvider";
 import "./globals.css";
 
+const display = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-bricolage", display: "swap" });
+const body = Figtree({ subsets: ["latin"], variable: "--font-figtree", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "Daemon",
-  description: "Turn your Chog into a yield-earning ERC-6551 account that anyone can compound and anyone can hype. Monad Testnet.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  title: { default: "Daemon · a little spirit for every Chog", template: "%s · Daemon" },
+  description:
+    "Wake the Daemon inside your Chog. It saves, earns, sulks and celebrates, and it travels with your Chog wherever it goes. Live on Monad.",
+  openGraph: {
+    title: "Daemon · a little spirit for every Chog",
+    description: "Wake the Daemon inside your Chog. It earns while you sleep, and anyone can cheer it on.",
+    images: ["/media/hero-jelly.jpg"],
+  },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#836ef9",
+  themeColor: "#7a5af0",
   width: "device-width",
   initialScale: 1,
 };
 
+/** Marks the document as JS-capable so reveal-on-scroll elements start hidden (and stay visible without JS). */
+const jsMarker = `document.documentElement.classList.add('js')`;
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" className={`${display.variable} ${body.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <script dangerouslySetInnerHTML={{ __html: jsMarker }} />
       </head>
       <body className="min-h-screen font-sans">
-        <Providers>
-          <Header />
-          <ContractsBanner />
-          <main className="mx-auto max-w-6xl px-4 py-6 sm:py-10">{children}</main>
-          <footer className="mx-auto max-w-6xl px-4 pb-10 text-xs text-dim">
-            Daemon on Monad Testnet (10143). No session keys, no executor, no admin over funds.
-          </footer>
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

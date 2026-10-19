@@ -4,31 +4,12 @@ import Link from "next/link";
 import { useState } from "react";
 import { useAccount } from "wagmi";
 import { useAuth } from "@/lib/auth";
-import { contracts } from "@/lib/config";
-import { errorMessage } from "@/lib/format";
+import { contracts, FAUCET_URL } from "@/lib/config";
 import { useOwnedChogs } from "@/lib/hooks";
+import { DOLLARS_LABEL, MINT_LABEL, useStarter } from "@/lib/starter";
 import { ChogCard } from "./ChogCard";
-import { Button, Empty, Loading, Notice } from "./ui";
-
-function Hero() {
-  return (
-    <div className="mb-8 overflow-hidden rounded-[2rem] bg-gradient-to-br from-monad-900 via-monad-600 to-monad-300 p-6 text-white sm:p-10">
-      <div className="max-w-2xl">
-        <div className="text-sm font-semibold uppercase tracking-widest opacity-80">Monad Testnet</div>
-        <h1 className="mt-2 text-3xl font-black leading-tight sm:text-5xl">Your Chog is a Daemon now. 😈</h1>
-        <p className="mt-3 text-base opacity-90 sm:text-lg">
-          Every Chog gets its own ERC-6551 account that earns yield in our Stable and Degen vaults. Anyone can compound it for a bounty,
-          anyone can hype it. Nobody can touch your funds but you.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-const METHOD_NOTE = {
-  indexer: "Found via the indexer.",
-  logs: "MockChog isn't enumerable and no indexer is set, so we only scanned the last ~900 blocks (Monad caps eth_getLogs) plus Chogs minted from this browser.",
-} as const;
+import { Creature } from "./creature/Creature";
+import { Button, cx, Loading, Notice } from "./ui";
 
 export function MyChogs() {
   const { address } = useAccount();
@@ -36,63 +17,175 @@ export function MyChogs() {
   const owned = useOwnedChogs(address);
   const [shown, setShown] = useState(24);
 
-  return (
-    <div>
-      <Hero />
-      <div className="mb-4 flex items-end justify-between gap-3">
-        <h2 className="text-xl font-black">My Chogs</h2>
-        <Link href="/explore" className="text-sm font-semibold text-monad-600 hover:underline dark:text-monad-300">
-          Open any Daemon →
-        </Link>
-      </div>
+  if (!address) {
+    return (
+      <section className="clay relative overflow-hidden rounded-[2.5rem] px-6 py-14 text-center sm:px-12 sm:py-20">
+        <div aria-hidden className="absolute inset-0 bg-[radial-gradient(50%_60%_at_50%_30%,var(--glow),transparent_70%)]" />
+        <Creature className="relative mx-auto h-44 w-44 animate-float sm:h-56 sm:w-56" />
+        <h1 className="relative mt-6 font-display text-[clamp(2.2rem,5vw,3.4rem)] font-extrabold leading-tight tracking-tight">Your Daemons are asleep.</h1>
+        <p className="relative mx-auto mt-3 max-w-md text-lg text-dim">Sign in to wake them up. Use your email, Google, X or a wallet. It takes a few seconds.</p>
+        <Button size="lg" className="relative mt-8" onClick={auth.login} disabled={!auth.ready}>
+          Sign in to your den
+        </Button>
+      </section>
+    );
+  }
 
-      {!contracts.mockChog ? (
-        <Empty emoji="🚧" title="Contracts not deployed yet">
-          MockChog&apos;s address isn&apos;t configured, so there&apos;s nothing to list. Add NEXT_PUBLIC_MOCK_CHOG to .env.local after deployment.
-        </Empty>
-      ) : !address ? (
-        <Empty emoji="🔑" title="Sign in to see your Chogs">
-          <div className="mt-2">
-            <Button onClick={auth.login} disabled={!auth.ready}>
-              {auth.provider === "privy" ? "Sign in with email, social or wallet" : "Connect wallet"}
-            </Button>
-          </div>
-        </Empty>
-      ) : owned.isLoading ? (
-        <Loading label="Finding your Chogs…" />
-      ) : owned.error ? (
-        <Notice tone="error" title="Couldn't load your Chogs">
-          {errorMessage(owned.error).slice(0, 240)}
-        </Notice>
-      ) : owned.data && owned.data.ids.length === 0 && owned.data.balance === BigInt(0) ? (
-        <Empty emoji="🐸" title="No Chogs yet">
-          Hit <b>Mint Test Chog</b> in the header (you&apos;ll need a little MON from the faucet for gas).
-        </Empty>
-      ) : (
-        <>
-          {owned.data && owned.data.ids.length > 0 && (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              {owned.data.ids.slice(0, shown).map((id) => (
-                <ChogCard key={id.toString()} tokenId={id} />
+  const ids = owned.data?.ids ?? [];
+  return (
+    <div className="space-y-10">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="font-display text-[clamp(2.2rem,5vw,3.4rem)] font-extrabold leading-none tracking-tight">Your den</h1>
+          <p className="mt-2 text-lg text-dim">Every Chog you hold, and how its Daemon is feeling.</p>
+        </div>
+        <Link href="/explore" className="rounded-full px-5 py-2.5 font-semibold text-jelly transition hover:bg-jelly/10">
+          Visit someone else&apos;s →
+        </Link>
+      </header>
+
+      <Checklist firstChog={ids[0]} />
+
+      <section aria-label="Your Chogs">
+        {!contracts.mockChog ? null : owned.isLoading ? (
+          <Loading label="Looking for your Chogs…" />
+        ) : owned.error ? (
+          <Notice tone="error" title="We couldn't load your Chogs">
+            The network didn&apos;t answer. It usually comes back in a moment.
+          </Notice>
+        ) : ids.length === 0 && owned.data?.balance === BigInt(0) ? (
+          <EmptyDen />
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 xl:grid-cols-4">
+              {ids.slice(0, shown).map((id, i) => (
+                <div key={id.toString()} style={{ animation: `rise .6s ${Math.min(i, 8) * 60}ms ease both` }}>
+                  <ChogCard tokenId={id} />
+                </div>
               ))}
             </div>
-          )}
-          {owned.data && owned.data.ids.length > shown && (
-            <div className="mt-4 text-center">
-              <Button variant="ghost" onClick={() => setShown((n) => n + 24)}>
-                Show more ({owned.data.ids.length - shown} left)
-              </Button>
-            </div>
-          )}
-          {owned.data?.partial && (
-            <div className="mt-4">
-              <Notice tone="info" title={`You hold ${owned.data.balance.toString()} Chog(s); showing ${owned.data.ids.length}.`}>
-                {METHOD_NOTE[owned.data.method]} Open a missing one by ID on <Link href="/explore" className="underline">Explore</Link>.
-              </Notice>
-            </div>
-          )}
-        </>
-      )}
+            {ids.length > shown && (
+              <div className="mt-6 text-center">
+                <Button variant="ghost" onClick={() => setShown((n) => n + 24)}>
+                  Show {Math.min(24, ids.length - shown)} more
+                </Button>
+              </div>
+            )}
+            {owned.data?.partial && (
+              <p className="mt-6 text-center text-sm text-dim">
+                Don&apos;t see one of your Chogs?{" "}
+                <Link href="/explore" className="font-semibold text-jelly underline-offset-4 hover:underline">
+                  Open it by its number
+                </Link>
+                .
+              </p>
+            )}
+          </>
+        )}
+      </section>
     </div>
+  );
+}
+
+function EmptyDen() {
+  const s = useStarter();
+  return (
+    <div className="clay-sunk flex flex-col items-center gap-4 rounded-[2rem] px-6 py-14 text-center">
+      <Creature className="h-32 w-32 animate-float" />
+      <div className="font-display text-2xl font-bold">No Chogs here yet</div>
+      <p className="max-w-sm text-dim">Mint a free test Chog and it&apos;ll show up right here, ready to wake.</p>
+      <Button onClick={() => void s.mint()} loading={s.pending === MINT_LABEL} disabled={!s.canMint}>
+        Mint a free Chog
+      </Button>
+      {!s.hasMon && <p className="text-xs text-dim">You&apos;ll need a little free MON for the network fee first.</p>}
+    </div>
+  );
+}
+
+/** Getting-started checklist; each step ticks itself off from on-chain state. */
+function Checklist({ firstChog }: { firstChog?: bigint }) {
+  const s = useStarter();
+  const steps = [
+    {
+      done: s.hasMon,
+      title: "Grab free MON",
+      body: "A pinch covers network fees.",
+      action: (
+        <a href={FAUCET_URL} target="_blank" rel="noreferrer" className="text-sm font-semibold text-jelly underline-offset-4 hover:underline">
+          Open the faucet ↗
+        </a>
+      ),
+    },
+    {
+      done: s.hasChog,
+      title: "Mint a Chog",
+      body: "Free, with its own look and vibe.",
+      action: (
+        <Button size="sm" variant="secondary" onClick={() => void s.mint()} loading={s.pending === MINT_LABEL} disabled={!s.canMint}>
+          Mint
+        </Button>
+      ),
+    },
+    {
+      done: s.hasDollars,
+      title: "Get test dollars",
+      body: `1,000 ${s.asset?.symbol ?? "dollars"} to put to work.`,
+      action: (
+        <Button size="sm" variant="secondary" onClick={() => void s.getDollars()} loading={s.pending === DOLLARS_LABEL} disabled={!s.canGetDollars}>
+          Get them
+        </Button>
+      ),
+    },
+    {
+      done: false,
+      title: "Wake & feed it",
+      body: "Open your Chog to start earning.",
+      action: firstChog !== undefined ? (
+        <Link href={`/daemon/${firstChog.toString()}`} className="text-sm font-semibold text-jelly underline-offset-4 hover:underline">
+          Open Chog #{firstChog.toString()} →
+        </Link>
+      ) : null,
+    },
+  ];
+  const doneCount = steps.filter((x) => x.done).length;
+  if (doneCount >= 3) return null;
+
+  return (
+    <section className="clay rounded-[2rem] p-5 sm:p-7" aria-label="Getting started">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-display text-2xl font-bold">Getting started</h2>
+        <span className="text-sm text-dim">
+          {doneCount} of {steps.length} done
+        </span>
+      </div>
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2">
+        <div className="h-full rounded-full bg-jelly transition-all duration-700" style={{ width: `${(doneCount / steps.length) * 100}%` }} />
+      </div>
+      <ol className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {steps.map((st, i) => (
+          <li key={st.title} className={cx("rounded-2xl p-4 transition", st.done ? "bg-mint/10" : "clay-sunk")}>
+            <div className="flex items-center gap-2.5">
+              <span
+                className={cx(
+                  "grid h-7 w-7 shrink-0 place-items-center rounded-full text-sm font-bold",
+                  st.done ? "bg-mint text-white" : "bg-surface text-dim",
+                )}
+              >
+                {st.done ? (
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12l5 5L20 7" />
+                  </svg>
+                ) : (
+                  i + 1
+                )}
+              </span>
+              <span className={cx("font-semibold", st.done && "text-dim line-through decoration-2")}>{st.title}</span>
+            </div>
+            <p className="mt-2 text-sm text-dim">{st.body}</p>
+            {!st.done && st.action && <div className="mt-3">{st.action}</div>}
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }

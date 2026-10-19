@@ -4,9 +4,12 @@ import { simulateContract, writeContract } from "wagmi/actions";
 import { erc6551RegistryAbi } from "@/lib/abis";
 import { CHAIN_ID, contracts, env } from "@/lib/config";
 import { useTx } from "@/lib/tx";
-import { Button, Card, Notice } from "../ui";
+import { Creature } from "../creature/Creature";
+import { Button } from "../ui";
 
-/** Shown while the ERC-6551 account has no code yet. createAccount is permissionless. */
+const LABEL = "Wake up this Daemon";
+
+/** Shown while the Daemon's wallet doesn't exist yet. Anyone can wake it; ownership never changes. */
 export function DeployPanel({
   tokenId,
   user,
@@ -21,12 +24,12 @@ export function DeployPanel({
   onDeployed: () => void;
 }) {
   const { run, pending } = useTx();
-  const create = () =>
+  const wake = () =>
     user &&
     contracts.accountImpl &&
     contracts.mockChog &&
     run(
-      "Activate Daemon",
+      LABEL,
       async (config) => {
         const { request } = await simulateContract(config, {
           address: contracts.registry,
@@ -38,24 +41,29 @@ export function DeployPanel({
         });
         return writeContract(config, request);
       },
-      { onSuccess: onDeployed },
+      { done: "It's awake!", onSuccess: onDeployed },
     );
 
   return (
-    <Card title="✨ Activate this Daemon">
-      <p className="text-sm text-dim">
-        The address above is deterministic, but the token-bound account contract isn&apos;t deployed yet. Deploying it via the canonical
-        ERC-6551 registry is permissionless and does not change ownership: the Chog holder stays in control.
-      </p>
-      {!canCreate ? (
-        <div className="mt-4">
-          <Notice tone="warn">NEXT_PUBLIC_DAEMON_ACCOUNT_IMPL is not set, so the account can&apos;t be created from here yet.</Notice>
-        </div>
-      ) : (
-        <Button className="mt-4 w-full" onClick={create} loading={pending === "Activate Daemon"} disabled={!user}>
-          {!user ? "Sign in to activate" : isOwner ? "Deploy my Daemon account" : "Deploy this Daemon's account"}
-        </Button>
-      )}
-    </Card>
+    <section className="clay relative overflow-hidden rounded-[2rem] p-6 sm:p-8">
+      <div aria-hidden className="absolute -right-6 -top-6 h-40 w-40 opacity-90">
+        <Creature className="h-full w-full" />
+      </div>
+      <div className="relative max-w-md">
+        <h2 className="font-display text-3xl font-extrabold">Still asleep</h2>
+        <p className="mt-2 text-dim">
+          {isOwner
+            ? "Wake your Daemon to give this Chog its own wallet. It stays yours, and it only takes one tap."
+            : "Anyone can wake a Daemon. The Chog still belongs to its holder."}
+        </p>
+        {canCreate ? (
+          <Button size="lg" className="mt-6" onClick={wake} loading={pending === LABEL} disabled={!user}>
+            {!user ? "Sign in to wake it" : "Wake it up"}
+          </Button>
+        ) : (
+          <p className="mt-6 rounded-2xl bg-surface-2 px-4 py-3 text-sm text-dim">Waking Daemons opens very soon. Check back in a little while.</p>
+        )}
+      </div>
+    </section>
   );
 }

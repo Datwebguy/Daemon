@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { zeroAddress } from "viem";
 import { txUrl } from "@/lib/config";
-import { errorMessage, fmtUnits, shortAddr, toBigIntSafe } from "@/lib/format";
+import { fmtUnits, shortAddr, toBigIntSafe } from "@/lib/format";
 import { useProtocol } from "@/lib/hooks";
 import {
   FEED_QUERY,
@@ -17,8 +17,9 @@ import {
   type HypedRow,
 } from "@/lib/indexer";
 import { moodOf } from "@/lib/mood";
+import { Creature } from "./creature/Creature";
 import { ErrorBoundary } from "./ErrorBoundary";
-import { Card, Empty, Loading, Notice, Pill } from "./ui";
+import { cx, Empty, Loading, Notice } from "./ui";
 
 type FeedItem =
   | ({ kind: "update" } & DaemonUpdateRow)
@@ -34,7 +35,7 @@ function order(a: FeedItem, b: FeedItem) {
 
 const isObj = (x: unknown): x is Record<string, unknown> => typeof x === "object" && x !== null;
 const arr = (x: unknown): unknown[] => (Array.isArray(x) ? x : []);
-/** A row is usable only if its id/tokenId/blockNumber are well-formed and its amounts parse as integers. */
+/** Only well-formed rows are shown, so one bad row can't break the page. */
 const okRow = (x: unknown, amountKeys: string[]): boolean =>
   isObj(x) &&
   typeof x.id === "string" &&
@@ -51,7 +52,6 @@ function FeedList() {
     refetchInterval: 10_000,
     queryFn: async () => {
       const d = await gql<{ DaemonUpdate: DaemonUpdateRow[]; Compounded: CompoundedRow[]; Hyped: HypedRow[] }>(FEED_QUERY, { limit: 30 });
-      // Drop malformed rows up front so one bad indexer row can't break the whole feed.
       const items: FeedItem[] = [
         ...arr(d.DaemonUpdate).filter((x) => okRow(x, ["yieldAmount"])).map((x) => ({ kind: "update" as const, ...(x as DaemonUpdateRow) })),
         ...arr(d.Compounded).filter((x) => okRow(x, ["profit", "bounty"])).map((x) => ({ kind: "compound" as const, ...(x as CompoundedRow) })),
@@ -61,63 +61,67 @@ function FeedList() {
     },
   });
 
-  if (q.isLoading) return <Loading label="Loading feed…" />;
-  if (q.error) return <Notice tone="error" title="Indexer error">{errorMessage(q.error).slice(0, 240)}</Notice>;
-  if (!q.data?.length) return <Empty emoji="🦗" title="Quiet so far">No Daemon activity indexed yet.</Empty>;
+  if (q.isLoading) return <Loading label="Catching up on the latest…" />;
+  if (q.error) return <Notice tone="error" title="Activity is taking a nap">We couldn&apos;t load the latest. It usually comes back in a moment.</Notice>;
+  if (!q.data?.length) return <Empty emoji="🦗" title="Quiet so far">Nothing has happened yet. Be the first to hype or harvest a Daemon.</Empty>;
 
   return (
     <ul className="space-y-3">
       {q.data.map((it) => {
-        const link = (
-          <Link href={`/daemon/${it.tokenId}`} className="font-bold hover:underline">
+        const chogLink = (
+          <Link href={`/daemon/${it.tokenId}`} className="font-bold hover:text-jelly">
             Chog #{it.tokenId}
           </Link>
         );
-        let body;
+        let icon: string;
+        let body: React.ReactNode;
         if (it.kind === "update") {
           const m = moodOf(it.mood);
+          icon = m?.emoji ?? "💬";
+          const y = toBigIntSafe(it.yieldAmount) ?? BigInt(0);
           body = (
             <>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-2xl">{m?.emoji ?? "💬"}</span> {link}
-                {m && <Pill className={`${m.bg} ${m.text}`}>{m.name}</Pill>}
-                {(toBigIntSafe(it.yieldAmount) ?? BigInt(0)) > BigInt(0) && (
-                  <span className="text-sm text-emerald-600 tabular-nums dark:text-emerald-400">
-                    +{fmtUnits(toBigIntSafe(it.yieldAmount), dec)} {sym}
-                  </span>
-                )}
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                {chogLink}
+                {m && <span className={cx("rounded-full px-2 py-0.5 text-xs font-semibold", m.bg, m.text)}>{m.name}</span>}
+                {y > BigInt(0) && <span className="font-semibold text-mint tabular-nums">+{fmtUnits(y, dec)} {sym}</span>}
               </div>
-              <p className="mt-1 text-sm">“{String(it.message ?? "")}”</p>
+              <p className="mt-1.5 font-display text-lg font-semibold leading-snug">“{String(it.message ?? "")}”</p>
             </>
           );
         } else if (it.kind === "compound") {
+          icon = "🌾";
           body = (
-            <div className="flex flex-wrap items-center gap-2 text-sm">
-              <span className="text-2xl">🔁</span> {link} compounded by <span className="font-mono">{shortAddr(String(it.caller ?? ""))}</span>: profit{" "}
-              {fmtUnits(toBigIntSafe(it.profit), dec)} {sym}, bounty {fmtUnits(toBigIntSafe(it.bounty), dec)} {sym}
-            </div>
+            <p className="text-sm">
+              {chogLink} was harvested by <span className="font-semibold">{shortAddr(String(it.caller ?? ""))}</span>.{" "}
+              <span className="text-mint">+{fmtUnits(toBigIntSafe(it.profit), dec)} {sym}</span> grown,{" "}
+              <span className="text-spark">{fmtUnits(toBigIntSafe(it.bounty), dec)} tip</span>.
+            </p>
           );
         } else {
           const isMon = String(it.token ?? "").toLowerCase() === zeroAddress;
+          icon = "⚡";
           body = (
-            <div className="flex flex-wrap items-center gap-2 text-sm">
-              <span className="text-2xl">⚡</span> {link} hyped by <span className="font-mono">{shortAddr(String(it.from ?? ""))}</span> with{" "}
-              {fmtUnits(toBigIntSafe(it.amount), isMon ? 18 : (chog?.decimals ?? 18))} {isMon ? "MON" : `$${chog?.symbol ?? "CHOG"}`}
-            </div>
+            <p className="text-sm">
+              <span className="font-semibold">{shortAddr(String(it.from ?? ""))}</span> hyped {chogLink} with{" "}
+              <span className="font-semibold text-spark">
+                {fmtUnits(toBigIntSafe(it.amount), isMon ? 18 : (chog?.decimals ?? 18))} {isMon ? "MON" : (chog?.symbol ?? "CHOG")}
+              </span>
+              .
+            </p>
           );
         }
         return (
-          <li key={`${it.kind}-${it.id}`} className="rounded-2xl bg-muted px-4 py-3">
-            <ErrorBoundary>{body}</ErrorBoundary>
-            <div className="mt-1 text-xs text-dim">
-              block {it.blockNumber}
+          <li key={`${it.kind}-${it.id}`} className="flex gap-3 rounded-[1.5rem] bg-surface-2/70 p-4" style={{ animation: "rise .4s ease both" }}>
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface text-xl" aria-hidden>
+              {icon}
+            </span>
+            <div className="min-w-0 flex-1">
+              <ErrorBoundary>{body}</ErrorBoundary>
               {typeof it.txHash === "string" && it.txHash && (
-                <>
-                  {" · "}
-                  <a href={txUrl(it.txHash)} target="_blank" rel="noreferrer" className="hover:underline">
-                    tx ↗
-                  </a>
-                </>
+                <a href={txUrl(it.txHash)} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs text-dim hover:text-fg">
+                  View receipt
+                </a>
               )}
             </div>
           </li>
@@ -137,9 +141,9 @@ function Leaderboard() {
         (x): x is DaemonRow => okRow(x, ["lifetimeYield"]) && isObj(x) && typeof x.tokenId !== "undefined",
       ),
   });
-  if (q.isLoading) return <Loading label="Loading leaderboard…" />;
-  if (q.error) return <Notice tone="error" title="Indexer error">{errorMessage(q.error).slice(0, 240)}</Notice>;
-  if (!q.data?.length) return <Empty emoji="🏁" title="No Daemons ranked yet" />;
+  if (q.isLoading) return <Loading label="Tallying up…" />;
+  if (q.error) return <Notice tone="error" title="The leaderboard is taking a nap">Try again in a moment.</Notice>;
+  if (!q.data?.length) return <Empty emoji="🏁" title="No one on the board yet">Earn a harvest to claim the top spot.</Empty>;
   return (
     <ol className="space-y-2">
       {q.data.map((d, i) => {
@@ -147,14 +151,19 @@ function Leaderboard() {
         return (
           <li key={d.id}>
             <ErrorBoundary>
-            <Link href={`/daemon/${d.tokenId}`} className="flex items-center gap-3 rounded-2xl bg-muted px-3 py-2 hover:ring-2 hover:ring-monad/40">
-              <span className="w-6 text-center font-black text-dim">{i + 1}</span>
-              <span className="text-xl">{m?.emoji ?? "🐸"}</span>
-              <span className="font-bold">#{d.tokenId}</span>
-              <span className="ml-auto text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
-                +{fmtUnits(toBigIntSafe(d.lifetimeYield), asset?.decimals ?? 18, 2)} {asset?.symbol ?? ""}
-              </span>
-            </Link>
+              <Link href={`/daemon/${d.tokenId}`} className={cx("flex items-center gap-3 rounded-2xl px-3 py-2.5 transition hover:bg-surface-2", i < 3 && "bg-surface-2/70")}>
+                <span className={cx("w-7 text-center font-display text-lg font-extrabold", i === 0 ? "text-amber-500" : i === 1 ? "text-slate-400" : i === 2 ? "text-orange-700" : "text-dim")}>
+                  {i + 1}
+                </span>
+                <span className="h-9 w-9">
+                  <Creature mood={d.mood} className="h-full w-full" />
+                </span>
+                <span className="font-semibold">#{d.tokenId}</span>
+                {m && <span className="hidden text-xs text-dim sm:inline">{m.name}</span>}
+                <span className="ml-auto font-display font-bold tabular-nums text-mint">
+                  +{fmtUnits(toBigIntSafe(d.lifetimeYield), asset?.decimals ?? 18, 2)}
+                </span>
+              </Link>
             </ErrorBoundary>
           </li>
         );
@@ -165,28 +174,34 @@ function Leaderboard() {
 
 export function Feed() {
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-black">Feed & Leaderboard</h1>
-        <p className="mt-1 text-dim">What every Daemon is saying, who&apos;s compounding, who&apos;s hyping.</p>
-      </div>
+    <div className="space-y-10">
+      <header>
+        <h1 className="font-display text-[clamp(2.2rem,5vw,3.4rem)] font-extrabold leading-none tracking-tight">Live activity</h1>
+        <p className="mt-2 max-w-xl text-lg text-dim">What every Daemon is saying, who&apos;s harvesting, and who&apos;s hyping.</p>
+      </header>
       {!indexerConfigured ? (
-        <Empty emoji="🛰️" title="Indexer not configured">
-          The feed and leaderboard read from a GraphQL indexer (Envio / Goldsky) because Monad&apos;s public RPC caps eth_getLogs at 100 to
-          1,000 blocks. Set <code className="font-mono">NEXT_PUBLIC_INDEXER_URL</code> to enable this page. Individual Daemon pages work without it.
-        </Empty>
+        <section className="clay relative overflow-hidden rounded-[2.5rem] px-6 py-14 text-center">
+          <Creature mood={0} className="mx-auto h-40 w-40 animate-float" />
+          <h2 className="mt-6 font-display text-3xl font-extrabold">The live feed is warming up</h2>
+          <p className="mx-auto mt-2 max-w-md text-dim">Soon you&apos;ll see every harvest, hype and mood swing here as it happens. Meanwhile, every Daemon&apos;s own page is fully live.</p>
+          <Link href="/explore" className="mt-7 inline-flex rounded-full bg-jelly px-6 py-3 font-semibold text-white">
+            Visit a Daemon
+          </Link>
+        </section>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
-          <Card title="📰 Live feed">
-            <ErrorBoundary fallback={<Notice tone="error" title="Couldn't display the feed" />}>
+          <section className="clay rounded-[2rem] p-5 sm:p-6">
+            <h2 className="mb-4 font-display text-xl font-bold">Happening now</h2>
+            <ErrorBoundary fallback={<Notice tone="error" title="Couldn't show the feed" />}>
               <FeedList />
             </ErrorBoundary>
-          </Card>
-          <Card title="🏆 Top yielders">
-            <ErrorBoundary fallback={<Notice tone="error" title="Couldn't display the leaderboard" />}>
+          </section>
+          <section className="clay rounded-[2rem] p-5 sm:p-6 lg:sticky lg:top-24 lg:self-start">
+            <h2 className="mb-4 font-display text-xl font-bold">Top earners</h2>
+            <ErrorBoundary fallback={<Notice tone="error" title="Couldn't show the leaderboard" />}>
               <Leaderboard />
             </ErrorBoundary>
-          </Card>
+          </section>
         </div>
       )}
     </div>

@@ -6,72 +6,105 @@ import { CHAIN_ID } from "@/lib/config";
 import { fmtAgo, fmtDuration, fmtUnits } from "@/lib/format";
 import { useNow } from "@/lib/hooks";
 import { useTx } from "@/lib/tx";
-import { Button, Card, Notice, Stat } from "../ui";
+import { Button } from "../ui";
 import type { DaemonCtx } from "./types";
 
-/** Public: anyone can compound any Daemon and receives the bounty. */
+const LABEL = "Harvest";
+
+/** Anyone can harvest any Daemon and keep a small tip. */
 export function CompoundPanel({ ctx }: { ctx: DaemonCtx }) {
-  const { account, deployed, user, protocol, state } = ctx;
+  const { account, deployed, user, protocol, state, isOwner } = ctx;
   const now = useNow();
   const { run, pending } = useTx();
   const dec = protocol.asset?.decimals ?? 18;
   const sym = protocol.asset?.symbol ?? "";
 
-  // nextCompoundAt() = anchor + cooldown, where the anchor is the first allocation time until the
-  // first compound happens (so lastCompoundAt + cooldown would be wrong before then).
+  // Ready time comes from the contract (it accounts for the first deposit before any harvest).
   const last = state.lastCompoundAt !== undefined ? Number(state.lastCompoundAt) : undefined;
   const readyAt = state.nextCompoundAt !== undefined ? Number(state.nextCompoundAt) : undefined;
   const remaining = readyAt !== undefined ? readyAt - now : undefined;
-  const cooling = remaining !== undefined && remaining > 0;
-  const noBounty = state.pendingBounty !== undefined && state.pendingBounty === BigInt(0);
+  const resting = remaining !== undefined && remaining > 0;
+  const tooSmall = state.pendingBounty !== undefined && state.pendingBounty === BigInt(0);
+  const cooldown = protocol.config ? Number(protocol.config.compoundCooldown) : undefined;
+  const restProgress = resting && cooldown ? 1 - (remaining ?? 0) / cooldown : 1;
 
-  const compound = () =>
+  const harvest = () =>
     user &&
-    run("Compound", async (config) => {
-      const { request } = await simulateContract(config, {
-        address: account,
-        abi: daemonAccountAbi,
-        functionName: "compound",
-        args: [user],
-        account: user,
-        chainId: CHAIN_ID,
-      });
-      return writeContract(config, request);
-    });
+    run(
+      LABEL,
+      async (config) => {
+        const { request } = await simulateContract(config, {
+          address: account,
+          abi: daemonAccountAbi,
+          functionName: "compound",
+          args: [user],
+          account: user,
+          chainId: CHAIN_ID,
+        });
+        return writeContract(config, request);
+      },
+      { done: "Harvested! Your tip is in your wallet" },
+    );
 
   return (
-    <Card title="🔁 Compound" right={<span className="text-xs text-dim">anyone can call</span>}>
-      <div className="grid grid-cols-2 gap-3">
-        <Stat label="Pending profit" value={`${fmtUnits(state.pendingProfit, dec)} ${sym}`} />
-        <Stat label="Est. bounty" value={`${fmtUnits(state.pendingBounty, dec)} ${sym}`} hint="estimate, paid to the caller" />
-        <Stat
-          label="Cooldown"
-          value={!deployed ? "–" : cooling ? fmtDuration(remaining ?? 0) : readyAt !== undefined ? "Ready" : "–"}
-          hint={last ? `last compound ${fmtAgo(last, now)}` : "never compounded"}
-        />
-        <Stat
-          label="Bounty share"
-          value={
-            protocol.config
-              ? `${protocol.config.bountyStartBps / 100}% → ${protocol.config.bountyMaxBps / 100}%`
-              : "–"
-          }
-          hint="rises the longer it waits"
-        />
+    <div className="space-y-5">
+      <div className="grid gap-4 sm:grid-cols-[auto_1fr] sm:items-center">
+        <RestRing progress={restProgress} label={resting ? fmtDuration(remaining ?? 0) : "Ready"} resting={resting} />
+        <div>
+          <div className="text-sm text-dim">Rewards waiting to be harvested</div>
+          <div className="font-display text-4xl font-extrabold tabular-nums">
+            {fmtUnits(state.pendingProfit, dec)} <span className="text-2xl text-dim">{sym}</span>
+          </div>
+          <div className="mt-1 text-sm">
+            {resting ? (
+              <span className="text-dim">Resting. It can be harvested again when the timer ends.</span>
+            ) : (
+              <>
+                {isOwner ? "Anyone can harvest this for you, or do it yourself." : "Harvest it and you keep the tip."}{" "}
+                {!tooSmall && <span className="font-semibold text-spark">Tip now: about {fmtUnits(state.pendingBounty, dec)} {sym}</span>}
+              </>
+            )}
+          </div>
+        </div>
       </div>
-      <div className="mt-4 space-y-3">
-        {deployed && !cooling && noBounty && (
-          <Notice tone="warn">Pending profit doesn&apos;t cover gas + bounty yet, so compound will likely revert.</Notice>
-        )}
-        <Button
-          className="w-full"
-          onClick={compound}
-          loading={pending === "Compound"}
-          disabled={!user || !deployed || cooling}
-        >
-          {!user ? "Sign in to compound" : cooling ? `Cooling down · ${fmtDuration(remaining ?? 0)}` : "Compound & earn bounty"}
-        </Button>
-      </div>
-    </Card>
+
+      {deployed && !resting && tooSmall && (
+        <p className="rounded-2xl bg-surface-2 px-4 py-3 text-sm text-dim">Not enough has grown yet to make a harvest worth it. Check back in a little while.</p>
+      )}
+
+      <Button size="lg" className="w-full" onClick={harvest} loading={pending === LABEL} disabled={!user || !deployed || resting}>
+        {!user ? "Sign in to harvest" : resting ? `Resting for ${fmtDuration(remaining ?? 0)}` : "Harvest & keep the tip"}
+      </Button>
+
+      <p className="text-center text-xs text-dim">
+        {last ? `Last harvested ${fmtAgo(last, now)}.` : "Never harvested yet."}{" "}
+        {protocol.config && `Tips start at ${protocol.config.bountyStartBps / 100}% and grow to ${protocol.config.bountyMaxBps / 100}% the longer it waits.`}
+      </p>
+    </div>
+  );
+}
+
+function RestRing({ progress, label, resting }: { progress: number; label: string; resting: boolean }) {
+  const r = 34;
+  const c = 2 * Math.PI * r;
+  return (
+    <div className="relative mx-auto h-24 w-24 shrink-0">
+      <svg viewBox="0 0 80 80" className="h-full w-full -rotate-90" aria-hidden>
+        <circle cx="40" cy="40" r={r} fill="none" stroke="var(--surface-2)" strokeWidth="8" />
+        <circle
+          cx="40"
+          cy="40"
+          r={r}
+          fill="none"
+          stroke={resting ? "var(--jelly)" : "var(--mint)"}
+          strokeWidth="8"
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={c * (1 - Math.max(0, Math.min(1, progress)))}
+          className="transition-[stroke-dashoffset] duration-1000"
+        />
+      </svg>
+      <div className="absolute inset-0 grid place-items-center text-center font-display text-sm font-bold leading-tight">{label}</div>
+    </div>
   );
 }
