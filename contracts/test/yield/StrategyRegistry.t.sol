@@ -104,6 +104,35 @@ contract StrategyRegistryTest is Test {
         new StrategyRegistry(c, governor, DELAY);
     }
 
+    function test_constructor_rejectsBadPerks() public {
+        IStrategyRegistry.Config memory c = _config();
+        c.chogBurnBps = 5_001; // never burn more than half a hype
+        vm.expectRevert(StrategyRegistry.InvalidConfig.selector);
+        new StrategyRegistry(c, governor, DELAY);
+
+        c = _config();
+        c.luckyChanceBps = 10_001;
+        vm.expectRevert(StrategyRegistry.InvalidConfig.selector);
+        new StrategyRegistry(c, governor, DELAY);
+
+        c = _config();
+        c.entropy = address(0xE17); // no code
+        c.luckyGasLimit = 100_000;
+        vm.expectRevert(StrategyRegistry.InvalidConfig.selector);
+        new StrategyRegistry(c, governor, DELAY);
+
+        vm.etch(address(0xE17), hex"00");
+        c.luckyGasLimit = 59_999; // too little gas for the callback
+        vm.expectRevert(StrategyRegistry.InvalidConfig.selector);
+        new StrategyRegistry(c, governor, DELAY);
+
+        c.luckyGasLimit = 60_000;
+        c.chogBurnBps = 5_000;
+        c.luckyChanceBps = 10_000;
+        StrategyRegistry ok = new StrategyRegistry(c, governor, DELAY);
+        assertEq(ok.config().entropy, address(0xE17));
+    }
+
     function test_cancelQueued() public {
         vm.prank(governor);
         reg.queueSource(address(stable), 1000e18);

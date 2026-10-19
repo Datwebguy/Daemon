@@ -20,6 +20,9 @@ abstract contract DaemonDeploy {
     address internal constant ERC6551_REGISTRY = 0x000000006551c19487814612e58FE06813775758;
     bytes32 internal constant DAEMON_SALT = bytes32(0); // DaemonHub.accountOf assumes salt 0
     uint256 internal constant DEGEN_EPOCH = 2 hours;
+    /// @dev Pyth Entropy V2 on Monad testnet (Pyth contract_manager store; code checked on-chain 2026-10-19).
+    ///      Used only where it has code, so local test chains simply run without lucky hype.
+    address internal constant PYTH_ENTROPY = 0x825c0390f379C631f3Cf11A82a37D20BddF93c07;
 
     struct Params {
         address deployer;
@@ -60,7 +63,7 @@ abstract contract DaemonDeploy {
     }
 
     /// @dev Testnet tuning. Short cooldowns so the full flow can be shown in minutes.
-    function _config(Deployment memory d) internal pure returns (IStrategyRegistry.Config memory c) {
+    function _config(Deployment memory d) internal view returns (IStrategyRegistry.Config memory c) {
         c.asset = address(d.dusd);
         c.wmon = address(d.wmon);
         c.chog = address(d.chogToken);
@@ -81,6 +84,16 @@ abstract contract DaemonDeploy {
         c.minHypeMon = 0.01 ether;
         c.minHypeChog = 10e18;
         c.neglectAfter = 3 days;
+        // $CHOG: twice the boost step of MON, an hour longer, and 10% of every CHOG hype is burned
+        c.chogBoostStepBps = 1000; // +0.10x per CHOG hype
+        c.chogBoostDuration = 4 hours;
+        c.chogBurnBps = 1000; // 10%
+        // lucky hype: Pyth Entropy roll, 1 in 5 is critical (max boost + one more boost duration)
+        if (PYTH_ENTROPY.code.length != 0) {
+            c.entropy = PYTH_ENTROPY;
+            c.luckyChanceBps = 2000; // 20%
+            c.luckyGasLimit = 120_000;
+        }
     }
 
     function _deployDaemon(Params memory p) internal returns (Deployment memory d) {

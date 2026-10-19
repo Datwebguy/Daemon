@@ -40,6 +40,10 @@ contract StrategyRegistry is IStrategyRegistry {
 
     /// @notice Max slippage the config may allow (50%).
     uint16 public constant MAX_SLIPPAGE_BPS = 5_000;
+    /// @notice Max share of a $CHOG hype that may be burned (50%).
+    uint16 public constant MAX_CHOG_BURN_BPS = 5_000;
+    /// @notice Min gas the lucky-hype Entropy callback must be given.
+    uint32 public constant MIN_LUCKY_GAS = 60_000;
     /// @notice Max number of sources; keeps DaemonAccount.sweepToOwner's registry pass complete (MAX_SWEEP_SOURCES).
     uint256 public constant MAX_TOTAL_SOURCES = 16;
 
@@ -57,6 +61,13 @@ contract StrategyRegistry is IStrategyRegistry {
             config_.bountyStartBps > config_.bountyMaxBps || config_.bountyMaxBps >= 10_000
                 || config_.maxSlippageBps > MAX_SLIPPAGE_BPS || config_.router.code.length == 0
                 || config_.oracle.code.length == 0
+        ) revert InvalidConfig();
+        // $CHOG burn is a share of a hype, never all of it; a lucky-hype setup needs a real Entropy contract and
+        // enough callback gas, and its chance is a probability.
+        if (
+            config_.chogBurnBps > MAX_CHOG_BURN_BPS || config_.luckyChanceBps > 10_000
+                || (config_.entropy != address(0)
+                    && (config_.entropy.code.length == 0 || config_.luckyGasLimit < MIN_LUCKY_GAS))
         ) revert InvalidConfig();
         _config = config_;
         governor = governor_;

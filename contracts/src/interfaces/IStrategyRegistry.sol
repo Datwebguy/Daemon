@@ -30,6 +30,14 @@ interface IStrategyRegistry {
         uint256 minHypeChog; // minimum $CHOG per hype
         // mood
         uint32 neglectAfter; // seconds without compound or hype before mood decays to Tired
+        // $CHOG perks (0 = same as a MON hype / no burn)
+        uint16 chogBoostStepBps; // multiplier added per $CHOG hype (e.g. 1000 = +0.10x)
+        uint32 chogBoostDuration; // seconds a $CHOG hype keeps the boost alive
+        uint16 chogBurnBps; // share of every $CHOG hype that is burned (e.g. 1000 = 10%)
+        // lucky hype (Pyth Entropy; entropy = 0 disables it)
+        address entropy; // Pyth Entropy V2 contract
+        uint16 luckyChanceBps; // chance that a lucky roll is critical (e.g. 2000 = 20%)
+        uint32 luckyGasLimit; // gas the Entropy callback may use
     }
 
     event SourceQueued(address indexed source, uint256 capPerAccount, uint256 eta);

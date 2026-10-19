@@ -101,8 +101,10 @@ contract DaemonFlowTest is Test, DaemonDeploy {
         d.chogToken.approve(address(account), 100e18);
         account.hypeWithChog(50e18);
         vm.stopPrank();
-        (, , , uint256 potChog) = account.getBoost();
-        assertEq(potChog, 50e18);
+        (uint256 multAfterChog, , , uint256 potChog) = account.getBoost();
+        assertEq(potChog, 45e18, "10% of a CHOG hype is burned, the rest funds the pot");
+        assertEq(d.chogToken.balanceOf(account.BURN_ADDRESS()), 5e18);
+        assertGe(multAfterChog, 11_000, "a CHOG hype adds +0.10x");
 
         // the Chog is sold: everything follows the NFT
         vm.prank(alice);
