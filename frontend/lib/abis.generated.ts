@@ -4613,6 +4613,19 @@ export const mockChogAbi = [
   },
   {
     "type": "function",
+    "name": "IMAGE_BASE_URI",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "MAX_CAPTION_BYTES",
     "inputs": [],
     "outputs": [
@@ -5010,6 +5023,19 @@ export const mockChogAbi = [
   },
   {
     "type": "function",
+    "name": "realTraits",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IChogRealTraits"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "safeTransferFrom",
     "inputs": [
       {
@@ -5095,6 +5121,19 @@ export const mockChogAbi = [
         "name": "salt",
         "type": "bytes32",
         "internalType": "bytes32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setRealTraits",
+    "inputs": [
+      {
+        "name": "reader",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "outputs": [],
@@ -5324,6 +5363,19 @@ export const mockChogAbi = [
   },
   {
     "type": "event",
+    "name": "RealTraitsLinked",
+    "inputs": [
+      {
+        "name": "reader",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "Transfer",
     "inputs": [
       {
@@ -5483,6 +5535,16 @@ export const mockChogAbi = [
   {
     "type": "error",
     "name": "NotDeployer",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "RealTraitsAlreadySet",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "RealTraitsNotContract",
     "inputs": []
   },
   {

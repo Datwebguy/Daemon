@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {IChogTraits} from "../interfaces/IChog.sol";
+import {IChogTraits, IChogRealTraits} from "../interfaces/IChog.sol";
 import {IDaemonAccount} from "../interfaces/IDaemonAccount.sol";
 import {IERC6551Registry} from "../interfaces/IERC6551.sol";
 import {ChogArt} from "./ChogArt.sol";
@@ -16,9 +16,9 @@ import {ChogText} from "./ChogText.sol";
 /// REFERENCE: at mint each token is assigned an artwork id in 1..`ART_SUPPLY`, and `tokenURI` returns the real
 /// IPFS metadata pointer `ipfs://<CID>/<artId>.json`, so wallets and marketplaces show the real Chog image and
 /// traits. Duplicate artwork across testnet tokens is possible and accepted.
-/// @dev The mood/yield state of the token's Daemon (ERC-6551 token-bound account) lives in `livingURI`, a fully
-/// on-chain, live metadata JSON with a generated SVG: mood, boost and lifetime yield, plus the Daemon's last
-/// message. The cheap on-chain pseudo-traits (`IChogTraits`) are kept unchanged; they only bias Daemon moods.
+/// @dev `tokenURI` is on-chain JSON with the real image and (once `setRealTraits` is called) the real traits plus the
+/// live state of the token's Daemon (ERC-6551 token-bound account). `livingURI` is the fully drawn alternative: live
+/// metadata JSON with a generated SVG showing mood, boost and lifetime yield, plus the Daemon's last message. The cheap on-chain pseudo-traits (`IChogTraits`) are kept unchanged; they only bias Daemon moods.
 /// @dev Traits use a cheap pseudo-random hash (prevrandao/blockhash + tokenId + minter). It is NOT secure
 /// randomness and is fine only because this is a free testnet mock.
 /// The Daemon link (registry, implementation, salt) can be set exactly once by the deployer and is immutable after.
@@ -47,6 +47,10 @@ contract MockChog is ERC721, IChogTraits {
     error ImplementationNotContract();
     /// @notice A Chog cannot be sent to a token-bound account of this collection (ownership cycle locks funds).
     error ChogCannotOwnChog();
+    /// @notice The real-traits reader was already set.
+    error RealTraitsAlreadySet();
+    /// @notice The real-traits reader passed to `setRealTraits` has no code.
+    error RealTraitsNotContract();
 
     // ------------------------------------------------------------------
     // Events
@@ -54,6 +58,8 @@ contract MockChog is ERC721, IChogTraits {
 
     /// @notice Emitted once, when the Daemon link is set.
     event DaemonLinked(address indexed registry, address indexed implementation, bytes32 salt);
+    /// @notice Emitted once, when the real-traits reader is set.
+    event RealTraitsLinked(address indexed reader);
 
     // ------------------------------------------------------------------
     // Constants
@@ -70,6 +76,8 @@ contract MockChog is ERC721, IChogTraits {
     uint256 public constant ART_SUPPLY = 1969;
     /// @notice IPFS folder holding the real Chog Genesis metadata (`<artId>.json`).
     string public constant METADATA_BASE_URI = "ipfs://bafybeid4ybujnscdipkno7ps5utqelp5ry5ryreqhay3zhgk3a6x4jruqu/";
+    /// @notice IPFS folder holding the real Chog Genesis images (`<artId>.webp`).
+    string public constant IMAGE_BASE_URI = "ipfs://bafybeihau2egcccbdxymeckmmbrqytbfor5gkt3en6d5fsbueymdbq7g6e/";
 
     uint256 private constant VIEW_GAS = 100_000;
     uint256 private constant MESSAGE_GAS = 300_000;
@@ -96,6 +104,9 @@ contract MockChog is ERC721, IChogTraits {
     address public daemonImplementation;
     /// @notice ERC-6551 salt for Daemon accounts.
     bytes32 public daemonSalt;
+
+    /// @notice On-chain reader of the real Chog Genesis traits (zero until linked).
+    IChogRealTraits public realTraits;
 
     mapping(uint256 => Traits) private _traits;
 
@@ -176,6 +187,16 @@ contract MockChog is ERC721, IChogTraits {
         emit DaemonLinked(registry, implementation, salt);
     }
 
+    /// @notice Links the on-chain reader of the real Chog traits. Callable once, by the deployer only.
+    function setRealTraits(address reader) external {
+        if (msg.sender != deployer) revert NotDeployer();
+        if (address(realTraits) != address(0)) revert RealTraitsAlreadySet();
+        if (reader == address(0)) revert ZeroAddress();
+        if (reader.code.length == 0) revert RealTraitsNotContract();
+        realTraits = IChogRealTraits(reader);
+        emit RealTraitsLinked(reader);
+    }
+
     /// @notice Deterministic Daemon account address of `tokenId` (deployed or not). Zero before `setDaemon`.
     function daemonOf(uint256 tokenId) public view returns (address) {
         address registry = erc6551Registry;
@@ -197,11 +218,50 @@ contract MockChog is ERC721, IChogTraits {
     // Metadata
     // ------------------------------------------------------------------
 
-    /// @notice The REAL Chog Genesis metadata pointer: `ipfs://<CID>/<artId>.json`.
-    /// @dev Reverts with ERC721NonexistentToken for tokens that do not exist.
+    /// @notice Marketplace metadata. Once the real-traits reader is linked this is fully on-chain JSON with the REAL
+    ///         Chog Genesis image and traits plus the live state of the Chog's Daemon (mood, boost, lifetime
+    ///         yield, last message), so a wallet or marketplace shows the real art and how its Daemon is doing.
+    ///         Before that it is the plain pointer `ipfs://<CID>/<artId>.json`. A picture cannot be drawn on top of
+    ///         the real art here (marketplaces render SVG images without loading outside pictures); the fully drawn
+    ///         mood image is `livingURI`.
+    /// @dev Reverts with ERC721NonexistentToken for tokens that do not exist. Never reverts because of the Daemon.
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireOwned(tokenId);
-        return string.concat(METADATA_BASE_URI, Strings.toString(artIdOf[tokenId]), ".json");
+        uint256 artId = artIdOf[tokenId];
+        if (address(realTraits) == address(0)) {
+            return string.concat(METADATA_BASE_URI, Strings.toString(artId), ".json");
+        }
+        DaemonState memory s = readDaemonState(tokenId);
+        ChogArt.Params memory p = _params(tokenId, s);
+        string memory json = string.concat(
+            '{"name":"CHOG #',
+            Strings.toString(artId),
+            " (Testnet #",
+            Strings.toString(tokenId),
+            ')","description":"',
+            _description(s, p),
+            '","image":"',
+            IMAGE_BASE_URI,
+            Strings.toString(artId),
+            '.webp","attributes":[',
+            realTraits.traitsJson(artId),
+            _liveAttributes(p, artId),
+            "]}"
+        );
+        return string.concat("data:application/json;base64,", Base64.encode(bytes(json)));
+    }
+
+    /// @dev Live Daemon attributes appended after the real traits (each starts with a comma).
+    function _liveAttributes(ChogArt.Params memory p, uint256 artId) internal pure returns (string memory) {
+        return string.concat(
+            _attr(",", "Daemon", p.awake ? "Awake" : "Dormant"),
+            _attr(",", "Mood", p.awake ? ChogArt.moodName(p.mood) : "Dormant"),
+            _attr(",", "Boost multiplier", ChogText.formatBps(p.boostBps)),
+            ',{"trait_type":"Lifetime Yield","display_type":"number","value":',
+            p.yieldText,
+            "}",
+            _attr(",", "Artwork", Strings.toString(artId))
+        );
     }
 
     /// @notice Fully on-chain "living" metadata: base64 JSON with a base64 SVG image built from live Daemon state
@@ -278,7 +338,7 @@ contract MockChog is ERC721, IChogTraits {
     }
 
     function _description(DaemonState memory s, ChogArt.Params memory p) internal pure returns (string memory) {
-        string memory base = "A living Test Chog on Monad Testnet. Its image follows its Daemon (ERC-6551 account) ";
+        string memory base = "A Test Chog on Monad Testnet with the real Chog Genesis artwork. It owns a living Daemon (ERC-6551 account) ";
         if (s.account == address(0)) return string.concat(base, "once Daemons are linked.");
         base = string.concat(base, Strings.toHexString(s.account), ". ");
         if (!p.awake) return string.concat(base, "The Daemon is dormant.");

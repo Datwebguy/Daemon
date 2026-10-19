@@ -38,7 +38,7 @@ function normalizeImage(img: string | undefined): string | undefined {
   if (!img) return undefined;
   const v = img.trim();
   if (v.startsWith("<svg")) return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(v)}`;
-  if (v.startsWith("ipfs://")) return ipfsUrls(v)[0];
+  // Keep ipfs:// as is: imageSources() expands it to every gateway, so a slow gateway can fall back to the next.
   return v;
 }
 

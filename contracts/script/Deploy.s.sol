@@ -51,6 +51,7 @@ contract Deploy is Script, DaemonDeploy {
         vm.serializeAddress(k, "daemonAccountImpl", address(d.implementation));
         vm.serializeAddress(k, "mockChog", address(d.chog));
         vm.serializeAddress(k, "welcomeDrip", address(d.drip));
+        vm.serializeAddress(k, "chogRealTraits", address(d.realTraits));
         string memory json = vm.serializeAddress(k, "daemonHub", address(d.hub));
         vm.writeJson(json, string.concat("./deployments/", block.chainid == 10143 ? "monad-testnet" : vm.toString(block.chainid), ".json"));
         console2.log("Daemon deployed. MockChog:", address(d.chog));

@@ -14,6 +14,10 @@ import {DaemonHub} from "../src/DaemonHub.sol";
 import {MockChog} from "../src/chog/MockChog.sol";
 import {TraitPolicy} from "../src/chog/TraitPolicy.sol";
 import {WelcomeDrip} from "../src/WelcomeDrip.sol";
+import {ChogRealTraits, IChogTraitRows, IChogTraitNames} from "../src/chog/ChogRealTraits.sol";
+import {ChogTraitRows0} from "../src/chog/data/ChogTraitRows0.sol";
+import {ChogTraitRows1} from "../src/chog/data/ChogTraitRows1.sol";
+import {ChogTraitNames} from "../src/chog/data/ChogTraitNames.sol";
 
 /// @notice Shared deployment logic for the Monad testnet script and the integration tests.
 /// The caller is responsible for broadcasting (script) or pranking (tests) as `deployer`.
@@ -52,6 +56,7 @@ abstract contract DaemonDeploy {
         MockChog chog;
         DaemonHub hub;
         WelcomeDrip drip;
+        ChogRealTraits realTraits;
     }
 
     function _defaultParams(address deployer) internal pure returns (Params memory) {
@@ -148,6 +153,13 @@ abstract contract DaemonDeploy {
         d.implementation = new DaemonAccount(address(d.registry));
         d.chog = new MockChog(3, 10_000);
         d.chog.setDaemon(ERC6551_REGISTRY, address(d.implementation), DAEMON_SALT);
+        // the real Chog Genesis traits, packed on-chain, so tokenURI shows them next to the live Daemon state
+        d.realTraits = new ChogRealTraits(
+            IChogTraitRows(address(new ChogTraitRows0())),
+            IChogTraitRows(address(new ChogTraitRows1())),
+            IChogTraitNames(address(new ChogTraitNames()))
+        );
+        d.chog.setRealTraits(address(d.realTraits));
         d.hub = new DaemonHub();
 
         // welcome MON for first-time wallets (the app's relayer pays the claim gas)
