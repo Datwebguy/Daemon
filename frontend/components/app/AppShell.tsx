@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { CSSProperties, ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { FAUCET_URL } from "@/lib/config";
 import { cx } from "@/lib/cx";
 import { DOLLARS_LABEL, MINT_LABEL, useStarter } from "@/lib/starter";
@@ -55,11 +55,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
 
       {/* desktop rail: glued to the left edge */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-24 flex-col border-r-4 border-[color:var(--st-line)] bg-[var(--surface)] lg:flex">
-        <div className="flex justify-center pb-3 pt-5 [@media(max-height:640px)]:hidden">
-          <div className="[writing-mode:vertical-rl] rotate-180">
-            <Logo href="/app" />
-          </div>
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-28 flex-col border-r-4 border-[color:var(--st-line)] bg-[var(--surface)] lg:flex">
+        <div className="flex justify-center pb-4 pt-5 [&>a>span]:text-[1.5rem]">
+          <Logo href="/app" />
         </div>
         <div aria-hidden className="mx-3 border-t-[3px] border-dashed border-[color:var(--st-line)] opacity-25" />
 
@@ -74,7 +72,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 aria-current={on ? "page" : undefined}
                 style={{ "--tab": `var(${n.tone})`, background: on ? "var(--tab)" : "color-mix(in oklab, var(--tab) var(--tint), var(--surface))" } as CSSProperties}
                 className={cx(
-                  "relative z-10 ml-2 flex flex-col items-center [--tint:30%] dark:[--tint:14%] gap-1.5 border-[3px] border-[color:var(--st-line)] py-3 text-[13px] font-bold leading-none transition-[margin,padding,box-shadow,background] duration-200",
+                  "relative z-10 ml-2 flex flex-col items-center [--tint:30%] dark:[--tint:14%] gap-1.5 border-[3px] border-[color:var(--st-line)] py-3.5 text-sm font-bold leading-none transition-[margin,padding,box-shadow,background] duration-200",
                   on
                     ? "-mr-[18px] rounded-l-2xl rounded-r-2xl pr-[18px] shadow-[4px_4px_0_var(--st-shadow)]"
                     : "mr-2 rounded-l-2xl rounded-r-lg hover:-mr-1 hover:pr-2",
@@ -92,7 +90,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Supplies />
       </aside>
 
-      <div className="min-w-0 overflow-x-clip lg:pl-24">
+      <div className="min-w-0 overflow-x-clip lg:pl-28">
         {/* top bar: attached to the top edge */}
         <header className="sticky top-0 z-30 border-b-[3px] border-[color:var(--st-line)] bg-[var(--surface)]">
           <div className="flex h-16 items-stretch">
@@ -156,69 +154,105 @@ function ToolIcon({ d }: { d: string }) {
   );
 }
 
-function Tool({
-  label,
-  title,
-  icon,
-  tone,
-  href,
-  onClick,
-  disabled,
-}: {
-  label: string;
-  title: string;
-  icon: string;
-  tone: string;
-  href?: string;
-  onClick?: () => void;
-  disabled?: boolean;
-}) {
-  const cls =
-    "stk squish flex h-[3.4rem] w-full flex-col items-center justify-center gap-1 !rounded-xl !shadow-[2px_2px_0_var(--st-shadow)] text-[10px] font-bold leading-none transition-transform hover:-translate-y-0.5 disabled:pointer-events-none disabled:opacity-45";
-  const chip = (
-    <span className="grid h-6 w-6 place-items-center rounded-full border-2 border-[color:var(--st-line)]" style={{ background: `var(${tone})`, color: INK }}>
-      <ToolIcon d={icon} />
-    </span>
-  );
-  return href ? (
-    <a href={href} target="_blank" rel="noreferrer" title={title} aria-label={`${title} (opens in a new tab)`} className={cls}>
-      {chip}
-      {label}
-    </a>
-  ) : (
-    <button type="button" title={title} aria-label={title} onClick={onClick} disabled={disabled} className={cls}>
-      {chip}
-      {label}
-    </button>
-  );
-}
-
-/** Built-in helpers so nobody has to leave the app to get started. */
+/** Built-in helpers so nobody has to leave the app to get started: one button, one readable tray. */
 function Supplies() {
   const s = useStarter();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && setOpen(false);
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [open]);
+
+  const rows: { title: string; hint: string; icon: string; tone: string; href?: string; run?: () => void; off?: boolean; busy?: boolean }[] = [
+    { title: "Free MON for fees", hint: "Opens the faucet", icon: "M12 3s6 6.2 6 10.5a6 6 0 0 1-12 0C6 9.2 12 3 12 3z", tone: "--sky", href: FAUCET_URL },
+    {
+      title: `1,000 test ${s.asset?.symbol ?? "dollars"}`,
+      hint: !s.address ? "Sign in first" : "Pretend money to put to work",
+      icon: "M12 3v18M16.5 7.5C15.7 6.5 14 6 12 6c-2.4 0-4 1.1-4 2.9 0 4.4 8 2 8 6.2 0 1.8-1.7 3-4 3-2 0-3.5-.6-4.3-1.7",
+      tone: "--mint",
+      run: () => void s.getDollars(),
+      off: !s.canGetDollars || s.pending !== null,
+      busy: s.pending === DOLLARS_LABEL,
+    },
+    {
+      title: "Mint a free Chog",
+      hint: !s.address ? "Sign in first" : "A real Chog artwork, for testing",
+      icon: "M12 5v14M5 12h14",
+      tone: "--butter",
+      run: () => void s.mint(),
+      off: !s.canMint || s.pending !== null,
+      busy: s.pending === MINT_LABEL,
+    },
+  ];
+
   return (
-    <div className="mt-auto flex flex-col gap-2 px-2 pb-3 pt-3">
-      <div className="text-center text-[10px] font-bold uppercase tracking-[0.18em] text-dim">Free supplies</div>
-      <Tool label="MON" title="Free MON for fees" icon="M12 3s6 6.2 6 10.5a6 6 0 0 1-12 0C6 9.2 12 3 12 3z" tone="--sky" href={FAUCET_URL} />
-      <Tool
-        label={s.pending === DOLLARS_LABEL ? "Adding" : "Dollars"}
-        title={`1,000 test ${s.asset?.symbol ?? "dollars"}`}
-        icon="M12 3v18M16.5 7.5C15.7 6.5 14 6 12 6c-2.4 0-4 1.1-4 2.9 0 4.4 8 2 8 6.2 0 1.8-1.7 3-4 3-2 0-3.5-.6-4.3-1.7"
-        tone="--mint"
-        onClick={() => void s.getDollars()}
-        disabled={!s.canGetDollars || s.pending !== null}
-      />
-      <Tool
-        label={s.pending === MINT_LABEL ? "Minting" : "Chog"}
-        title="Mint a free Chog"
-        icon="M12 5v14M5 12h14"
-        tone="--butter"
-        onClick={() => void s.mint()}
-        disabled={!s.canMint || s.pending !== null}
-      />
-      {!s.address && <p className="text-center text-[10px] leading-tight text-dim">Sign in to use these.</p>}
-      <ThemeToggle className="!h-10 w-full justify-between [&>span]:flex-1 [&>span]:justify-center [&>span]:!px-0 [&_span_span]:hidden" />
-      <Link href="/" className="text-center text-[11px] font-semibold text-dim underline-offset-4 hover:text-fg hover:underline">
+    <div className="mt-auto flex flex-col gap-3 px-2.5 pb-4 pt-3" ref={ref}>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-haspopup="menu"
+          className="sticker sticker-pop squish flex w-full flex-col items-center gap-1 !rounded-2xl !bg-butter px-1 py-3 text-sm font-bold leading-tight"
+        >
+          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+          </svg>
+          Free supplies
+        </button>
+        {open && (
+          <div role="menu" className="sticker animate-pop absolute bottom-0 left-[calc(100%+0.9rem)] z-50 w-72 !rounded-2xl p-2">
+            <p className="px-3 pb-1 pt-2 text-xs text-dim">Everything here is pretend money. Take what you need.</p>
+            {rows.map((r) => {
+              const inner = (
+                <>
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border-[3px] border-[color:var(--st-line)]" style={{ background: `var(${r.tone})`, color: INK }}>
+                    <ToolIcon d={r.icon} />
+                  </span>
+                  <span className="min-w-0 text-left">
+                    <span className="block text-sm font-bold leading-tight">{r.busy ? "Working on it…" : r.title}</span>
+                    <span className="block text-xs text-dim">{r.hint}</span>
+                  </span>
+                </>
+              );
+              const cls = "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-jelly/15 disabled:cursor-not-allowed disabled:opacity-60";
+              return r.href ? (
+                <a key={r.title} role="menuitem" href={r.href} target="_blank" rel="noreferrer" className={cls} onClick={() => setOpen(false)}>
+                  {inner}
+                </a>
+              ) : (
+                <button
+                  key={r.title}
+                  role="menuitem"
+                  type="button"
+                  disabled={r.off}
+                  className={cls}
+                  onClick={() => {
+                    r.run?.();
+                    setOpen(false);
+                  }}
+                >
+                  {inner}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-col items-center gap-1.5">
+        <span className="text-xs font-bold text-dim">Theme</span>
+        <ThemeToggle iconOnly className="!h-11" />
+      </div>
+      <Link href="/" className="text-center text-xs font-semibold text-dim underline-offset-4 hover:text-fg hover:underline">
         About Daemon
       </Link>
     </div>

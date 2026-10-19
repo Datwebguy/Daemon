@@ -117,33 +117,39 @@ export function Hero() {
 
         {/* portal + creature */}
         <div className="relative mx-auto aspect-square w-full max-w-[34rem]">
-          <div className="absolute inset-[-6%] -z-10 overflow-hidden rounded-full" aria-hidden>
+          <div
+            aria-hidden
+            className="absolute inset-0 -z-10 overflow-hidden rounded-[2.5rem] border-[3px] border-[var(--st-line)] shadow-[8px_8px_0_var(--st-shadow)]"
+          >
             <Image
               src="/media/hero-jelly.jpg"
               alt=""
               fill
               priority
               sizes="(min-width: 1024px) 560px, 92vw"
-              className="animate-portal object-cover [mask-image:radial-gradient(circle_at_center,black_50%,transparent_70%)]"
+              className="animate-drift object-cover"
             />
+            {/* the mood colours the wall, so the stage always matches the Chog on it */}
+            <div className="absolute inset-0 transition-colors duration-700" style={{ background: `linear-gradient(160deg, ${m.hex}59, transparent 55%, ${m.hex}40)` }} />
+            <div className="dots absolute inset-0 opacity-40" />
           </div>
 
           {/* stickers you can pick up and move */}
-          <Draggable rotate={-8} className="absolute left-[-2%] top-[18%] z-30" label="A sticker that says gm">
+          <Draggable rotate={-8} className="absolute left-[4%] top-[17%] z-30" label="A sticker that says gm">
             <div className="sticker px-4 py-2 font-display text-xl">gm</div>
           </Draggable>
-          <Draggable rotate={9} className="absolute right-[-1%] top-[34%] z-30" label="A tip sticker">
+          <Draggable rotate={9} className="absolute right-[4%] top-[30%] z-30" label="A tip sticker">
             <div className="sticker !bg-butter px-4 py-2 font-display text-lg">+5% tip</div>
           </Draggable>
-          <Draggable rotate={-5} className="absolute bottom-[26%] left-[2%] z-30" label="A boost sticker">
+          <Draggable rotate={-5} className="absolute bottom-[26%] left-[4%] z-30" label="A boost sticker">
             <div className="sticker !bg-pink px-4 py-2 font-display text-lg">1.25× boost</div>
           </Draggable>
-          <Draggable rotate={6} className="absolute bottom-[22%] right-[1%] z-30 hidden sm:block" label="A rarity sticker">
+          <Draggable rotate={6} className="absolute bottom-[24%] right-[4%] z-30 hidden sm:block" label="A rarity sticker">
             <div className="sticker !bg-sky px-4 py-2 font-display text-lg">Tier: Rare</div>
           </Draggable>
 
           {/* speech bubble */}
-          <div className="pointer-events-none absolute left-1/2 top-[3%] z-20 w-[min(84%,21rem)] -translate-x-1/2">
+          <div className="pointer-events-none absolute left-1/2 top-[4%] z-20 w-[min(86%,22rem)] -translate-x-1/2">
             <div key={`${mood}-${line}`} className="sticker animate-pop px-5 py-3 text-center">
               <span className="font-display text-lg leading-snug">“{m.lines[line % m.lines.length]}”</span>
             </div>
@@ -151,7 +157,7 @@ export function Hero() {
 
           {/* the creature: poke it */}
           <div
-            className={cx("absolute inset-x-[19%] top-[25%] aspect-square cursor-pointer select-none", squish % 2 ? "[animation:squish-a_.5s_ease]" : "[animation:squish-b_.5s_ease]")}
+            className={cx("absolute inset-x-[26%] top-[29%] aspect-square cursor-pointer select-none", squish % 2 ? "[animation:squish-a_.5s_ease]" : "[animation:squish-b_.5s_ease]")}
             key={squish}
             onPointerDown={poke}
             role="button"
@@ -175,7 +181,7 @@ export function Hero() {
           </div>
 
           {/* mood picker */}
-          <div className="absolute inset-x-0 -bottom-3 z-30 flex justify-center">
+          <div className="absolute inset-x-0 bottom-[4%] z-30 flex justify-center">
             <div role="radiogroup" aria-label="Try a mood" className="sticker flex gap-1 !rounded-full p-1.5">
               {MOODS.map((x, i) => (
                 <button
@@ -195,7 +201,7 @@ export function Hero() {
               ))}
             </div>
           </div>
-          <p className="absolute -bottom-12 left-1/2 hidden -translate-x-1/2 whitespace-nowrap text-xs font-bold text-dim sm:block">
+          <p className="absolute -bottom-9 left-1/2 hidden -translate-x-1/2 whitespace-nowrap text-xs font-bold text-dim sm:block">
             Poke it · drag the stickers · it reacts
           </p>
         </div>
