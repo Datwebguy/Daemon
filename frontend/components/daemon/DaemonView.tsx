@@ -144,14 +144,14 @@ export function DaemonScreen({
               <Link
                 href={isOwner ? "/app" : "/explore"}
                 aria-label="Back"
-                className="sticker squish grid h-11 w-11 shrink-0 place-items-center !rounded-full !shadow-[3px_3px_0_var(--st-shadow)]"
+                className="sticker squish grid h-10 w-10 shrink-0 sm:h-11 sm:w-11 place-items-center !rounded-full !shadow-[3px_3px_0_var(--st-shadow)]"
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="M15 6l-6 6 6 6" />
                 </svg>
               </Link>
               <h1
-                className="sticker -rotate-2 !rounded-xl px-3.5 py-1.5 font-display text-xl leading-none sm:text-2xl"
+                className="sticker -rotate-2 !rounded-xl px-3 py-1.5 font-display text-lg leading-none sm:px-3.5 sm:text-2xl"
                 style={{ background: "var(--butter)" }}
               >
                 Chog #{tokenId.toString()}
@@ -169,14 +169,14 @@ export function DaemonScreen({
           >
             <TraitStickers chog={chog} />
           </DaemonAvatar>
-          <TraitList chog={chog} className="mt-9 lg:hidden" />
+          <TraitList chog={chog} className="mt-6 sm:mt-9 lg:hidden" />
 
-          <HeldBy isOwner={isOwner} owner={owner} className="mt-7 self-start lg:absolute lg:bottom-5 lg:left-6 lg:mt-0" />
+          <HeldBy isOwner={isOwner} owner={owner} className="mt-5 self-start sm:mt-7 lg:absolute lg:bottom-5 lg:left-6 lg:mt-0" />
 
           <Bubble
             text={awake ? state.lastMessage : undefined}
             asleep={moodNow === undefined}
-            className="mt-8 -mb-10 lg:absolute lg:bottom-[4.4rem] lg:left-6 lg:-right-[1.6rem] lg:mb-0 lg:mt-0"
+            className="mt-5 -mb-9 sm:mt-8 sm:-mb-10 lg:absolute lg:bottom-[4.4rem] lg:left-6 lg:-right-[1.6rem] lg:mb-0 lg:mt-0"
           />
         </div>
       </section>
@@ -226,8 +226,8 @@ export function DaemonScreen({
                   className={cx("dm-pad", `dm-t-${p.tone}`)}
                 >
                   <PadIcon kind={p.icon} />
-                  <span className="mt-1 font-display text-[1.2rem] sm:text-[1.4rem] leading-none">{p.label}</span>
-                  <span className="text-[11px] font-bold leading-tight opacity-80 sm:text-xs">{padNote[p.id]}</span>
+                  <span className="mt-0.5 font-display text-[1.05rem] leading-none sm:mt-1 sm:text-[1.4rem]">{p.label}</span>
+                  <span className="text-[10px] font-bold leading-tight opacity-80 sm:text-xs">{padNote[p.id]}</span>
                 </button>
               ))}
             </div>
@@ -296,7 +296,7 @@ function Bubble({ text, asleep, className }: { text?: string; asleep: boolean; c
   return (
     <div key={text} className={cx("dm-bubble sticker animate-pop relative", className)} aria-live="polite">
       <span aria-hidden className="dm-bubble-tail" />
-      <p className="relative font-display text-[clamp(1.2rem,2.3vw,1.9rem)] leading-tight [text-wrap:balance]">{line}</p>
+      <p className="relative font-display text-[1.05rem] leading-tight [text-wrap:balance] sm:text-[clamp(1.2rem,2.3vw,1.9rem)]">{line}</p>
     </div>
   );
 }

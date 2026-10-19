@@ -32,7 +32,7 @@ export function StateScreen({
           <ChogFace mood={mood} seed={seed} className="h-full w-full animate-float" />
         </div>
         <div className="sticker rotate-[1.5deg] !rounded-[1.4rem] !border-4 px-6 py-5 !shadow-[6px_6px_0_var(--st-shadow)]">
-          <h1 className="font-display text-3xl leading-tight sm:text-4xl">{title}</h1>
+          <h1 className="font-display text-2xl leading-tight sm:text-4xl">{title}</h1>
           {children && <div className="mx-auto mt-2 max-w-sm text-sm text-dim sm:text-base">{children}</div>}
           {loading && (
             <div className="mt-3 flex justify-center text-jelly">

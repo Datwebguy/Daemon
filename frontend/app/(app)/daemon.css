@@ -669,8 +669,48 @@ input[type="range"].dm-rail:focus-visible {
   animation: dm-z 3.4s ease-in-out infinite;
 }
 
-/* phones: lighter pads so three fit side by side without cramming */
+/* phones: a compact deck. Same layout, smaller furniture, less dead space. */
 @media (max-width: 639px) {
+  .dm-stage-inner {
+    padding: 0.85rem 1rem 2.9rem;
+  }
+  .dm-art {
+    width: min(60vw, 15.5rem);
+    margin-top: 1.5rem;
+  }
+  .sticker.dm-frame {
+    border-width: 3px;
+    border-radius: 1.4rem;
+    box-shadow: 6px 6px 0 var(--st-shadow);
+  }
+  .dm-watermark {
+    font-size: 8rem;
+  }
+  .dm-bubble {
+    padding: 0.7rem 0.95rem 0.8rem;
+    border-width: 3px;
+    border-radius: 1.1rem;
+    box-shadow: 4px 4px 0 var(--st-shadow);
+  }
+  .dm-bubble-tail {
+    top: -11px;
+    border-left-width: 3px;
+    border-top-width: 3px;
+  }
+  .dm-deck {
+    gap: 1.1rem;
+    padding-top: 3.9rem;
+  }
+  .dm-strip {
+    border-block-width: 3px;
+    box-shadow: 0 4px 0 var(--st-shadow);
+  }
+  .dm-cell {
+    padding: 0.55rem 0.85rem 0.6rem;
+  }
+  .dm-num {
+    font-size: clamp(1.1rem, 6.2cqi, 1.6rem);
+  }
   .dm-pads,
   .dm-panelwrap {
     --gap: 0.6rem;
@@ -679,13 +719,36 @@ input[type="range"].dm-rail:focus-visible {
     gap: 0.6rem;
   }
   .dm-pad {
-    min-height: 5.6rem;
-    padding: 0.65rem 0.6rem 0.6rem;
+    min-height: 5.1rem;
+    padding: 0.6rem 0.6rem 0.55rem;
     border-width: 3px;
     border-radius: 1rem;
     box-shadow: 4px 4px 0 var(--st-shadow);
   }
   .dm-pad[aria-pressed="true"] {
     transform: translate(3px, 3px);
+  }
+  .dm-notch {
+    border-top-width: 3px;
+    border-left-width: 3px;
+  }
+  .sticker.dm-panel {
+    padding: 1.1rem 0.9rem 1rem;
+    border-width: 3px;
+    border-radius: 1.2rem;
+    box-shadow: 5px 5px 0 var(--st-shadow);
+  }
+  .dm-btn {
+    border-width: 3px;
+    border-radius: 0.95rem;
+    box-shadow: 4px 4px 0 var(--st-shadow);
+  }
+  .dm-btn-lg {
+    padding: 0.65rem 1.1rem;
+    font-size: 1.05rem;
+  }
+  .dm-btn-xl {
+    padding: 0.8rem 1.2rem;
+    font-size: 1.2rem;
   }
 }

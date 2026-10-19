@@ -207,7 +207,7 @@ function Leaderboard() {
                 <span className="mt-2 font-display text-base leading-none sm:text-lg">#{d.tokenId}</span>
                 <span className="mb-2 mt-1 max-w-full truncate text-xs font-bold tabular-nums text-emerald-700 dark:text-mint">{earned(d)}</span>
                 <span className={cx("stk grid w-full place-items-center !rounded-b-none !rounded-t-xl text-[#1e1238]", p.fill, p.block)}>
-                  <span className="font-display text-4xl leading-none sm:text-5xl">{p.rank}</span>
+                  <span className="font-display text-3xl leading-none sm:text-5xl">{p.rank}</span>
                 </span>
               </Link>
             </ErrorBoundary>
@@ -258,23 +258,23 @@ export function Feed() {
       </PageHero>
 
       {!indexerConfigured ? (
-        <section className="relative overflow-hidden px-4 py-14 sm:px-6 lg:px-10">
-          <div className="mx-auto grid max-w-4xl items-center gap-8 sm:grid-cols-[auto_1fr]">
-            <ChogFace mood={0} className="animate-float mx-auto h-44 w-44 -rotate-3 sm:h-52 sm:w-52" />
-            <div className="stk relative p-6 sm:p-8">
+        <section className="relative overflow-hidden px-4 py-8 sm:px-6 sm:py-14 lg:px-10">
+          <div className="mx-auto grid max-w-4xl items-center gap-5 sm:gap-8 sm:grid-cols-[auto_1fr]">
+            <ChogFace mood={0} className="animate-float mx-auto h-28 w-28 -rotate-3 sm:h-52 sm:w-52" />
+            <div className="stk relative p-5 sm:p-8">
               <span aria-hidden className="absolute -left-[11px] top-12 hidden h-5 w-5 rotate-45 border-b-[3px] border-l-[3px] border-[color:var(--st-line)] [background:inherit] sm:block" />
-              <h2 className="font-display text-3xl leading-tight sm:text-4xl">The live feed is warming up</h2>
-              <p className="mt-3 max-w-md text-dim">
+              <h2 className="font-display text-2xl leading-tight sm:text-4xl">The live feed is warming up</h2>
+              <p className="mt-2 max-w-md text-sm text-dim sm:mt-3 sm:text-base">
                 Soon you&apos;ll see every harvest, hype and mood swing here as it happens. Meanwhile, every Daemon&apos;s own page is fully live.
               </p>
-              <Link href="/explore" className={cx("mt-6 inline-flex items-center rounded-full bg-jelly px-6 py-3 font-semibold text-white transition hover:bg-jelly-deep", STICKER_BTN)}>
+              <Link href="/explore" className={cx("mt-5 inline-flex items-center rounded-full bg-jelly px-5 py-2.5 text-sm font-semibold sm:mt-6 sm:px-6 sm:py-3 sm:text-base text-white transition hover:bg-jelly-deep", STICKER_BTN)}>
                 Visit a Daemon
               </Link>
             </div>
           </div>
         </section>
       ) : (
-        <div className="grid gap-12 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:gap-16 lg:px-10">
+        <div className="grid gap-8 px-4 py-6 sm:gap-12 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:gap-16 lg:px-10">
           <section aria-label="Happening now" className="min-w-0">
             <SectionTag tone="--sky" live>
               Happening now
