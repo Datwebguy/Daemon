@@ -66,7 +66,7 @@ contract MockChogTest is Test {
     }
 
     function _json(uint256 id) internal view returns (string memory json) {
-        string memory uri = chog.tokenURI(id);
+        string memory uri = chog.livingURI(id);
         assertEq(vm.indexOf(uri, JSON_PREFIX), 0, "json prefix");
         json = string(Base64Decode.decode(_slice(uri, bytes(JSON_PREFIX).length)));
     }
@@ -99,7 +99,7 @@ contract MockChogTest is Test {
     // ------------------------------------------------------------------
 
     function test_constructor() public view {
-        assertEq(chog.name(), "Test Chog");
+        assertEq(chog.name(), "Chog Genesis (Testnet)");
         assertEq(chog.symbol(), "tCHOG");
         assertEq(chog.deployer(), deployer);
         assertEq(chog.maxPerAddress(), 3);
@@ -279,15 +279,89 @@ contract MockChogTest is Test {
     }
 
     // ------------------------------------------------------------------
-    // tokenURI: dormant
+    // tokenURI: real Chog Genesis artwork by reference
     // ------------------------------------------------------------------
+
+    string internal constant CID_BASE = "ipfs://bafybeid4ybujnscdipkno7ps5utqelp5ry5ryreqhay3zhgk3a6x4jruqu/";
+
+    function test_artConstants() public view {
+        assertEq(chog.ART_SUPPLY(), 1969);
+        assertEq(chog.METADATA_BASE_URI(), CID_BASE);
+    }
 
     function test_tokenURI_nonexistentReverts() public {
         vm.expectRevert(abi.encodeWithSelector(IERC721Errors.ERC721NonexistentToken.selector, 7));
         chog.tokenURI(7);
+        vm.expectRevert(abi.encodeWithSelector(IERC721Errors.ERC721NonexistentToken.selector, 0));
+        chog.tokenURI(0);
     }
 
-    function test_tokenURI_dormantBeforeLink() public {
+    function test_artIdOf_unmintedIsZero() public view {
+        assertEq(chog.artIdOf(1), 0);
+    }
+
+    function test_tokenURI_isIpfsPointer() public {
+        uint256 id = _mint(alice);
+        uint256 art = chog.artIdOf(id);
+        assertGe(art, 1);
+        assertLe(art, 1969);
+        assertEq(chog.tokenURI(id), string.concat(CID_BASE, vm.toString(art), ".json"));
+        // matches the documented derivation
+        uint256 expected = 1
+            + uint256(keccak256(abi.encode(block.prevrandao, id, alice, blockhash(block.number - 1)))) % 1969;
+        assertEq(art, expected);
+    }
+
+    function testFuzz_tokenURI_artIdInRange(uint256 prevrandao, uint64 blockNo, address minter) public {
+        vm.assume(minter != address(0) && minter.code.length == 0);
+        blockNo = uint64(bound(blockNo, 2, type(uint32).max));
+        vm.roll(blockNo);
+        vm.prevrandao(bytes32(prevrandao));
+        vm.prank(minter);
+        uint256 id = chog.freeMint();
+        uint256 art = chog.artIdOf(id);
+        assertGe(art, 1);
+        assertLe(art, 1969);
+        assertEq(chog.tokenURI(id), string.concat(CID_BASE, vm.toString(art), ".json"));
+    }
+
+    function test_artIdOf_stable() public {
+        uint256 id = _mint(alice);
+        uint256 art = chog.artIdOf(id);
+        string memory uri = chog.tokenURI(id);
+        vm.roll(block.number + 5);
+        vm.prevrandao(bytes32(uint256(12345)));
+        vm.warp(block.timestamp + 1 days);
+        _mint(bob);
+        vm.prank(alice);
+        chog.transferFrom(alice, bob, id);
+        assertEq(chog.artIdOf(id), art);
+        assertEq(chog.tokenURI(id), uri);
+    }
+
+    function test_livingURI_includesArtworkAttribute() public {
+        uint256 id = _mint(alice);
+        string memory json = _json(id);
+        assertEq(vm.parseJsonString(json, ".attributes[8].trait_type"), "Artwork");
+        assertEq(_attr(json, 8), vm.toString(chog.artIdOf(id)));
+    }
+
+    function test_livingURI_neverIpfs() public {
+        uint256 id = _mint(alice);
+        assertEq(vm.indexOf(chog.livingURI(id), JSON_PREFIX), 0);
+        assertTrue(vm.indexOf(chog.tokenURI(id), "ipfs://") == 0);
+    }
+
+    // ------------------------------------------------------------------
+    // livingURI: dormant
+    // ------------------------------------------------------------------
+
+    function test_livingURI_nonexistentReverts() public {
+        vm.expectRevert(abi.encodeWithSelector(IERC721Errors.ERC721NonexistentToken.selector, 7));
+        chog.livingURI(7);
+    }
+
+    function test_livingURI_dormantBeforeLink() public {
         uint256 id = _mint(alice);
         string memory json = _json(id);
         assertEq(vm.parseJsonString(json, ".name"), "Test Chog #1");
@@ -307,7 +381,7 @@ contract MockChogTest is Test {
         assertFalse(_has(svg, "url(#aura1)"));
     }
 
-    function test_tokenURI_dormantWhenAccountHasNoCode() public {
+    function test_livingURI_dormantWhenAccountHasNoCode() public {
         uint256 id = _mint(alice);
         _link();
         address acct = chog.daemonOf(id);
@@ -319,7 +393,7 @@ contract MockChogTest is Test {
         assertEq(_attr(json, 5), "Dormant");
     }
 
-    function test_tokenURI_allViewsRevert() public {
+    function test_livingURI_allViewsRevert() public {
         (uint256 id, MockDaemonAccount acct) = _awakeChog();
         acct.setReverts(true, true, true, true);
         string memory json = _json(id);
@@ -328,7 +402,7 @@ contract MockChogTest is Test {
         assertTrue(_has(_svgFromJson(json), ">Dormant</text>"));
     }
 
-    function test_tokenURI_someViewsRevert() public {
+    function test_livingURI_someViewsRevert() public {
         (uint256 id, MockDaemonAccount acct) = _awakeChog();
         acct.setMood(IDaemonAccount.Mood.Chaotic);
         acct.setMessage("hello");
@@ -339,7 +413,7 @@ contract MockChogTest is Test {
         assertTrue(_has(_svgFromJson(json), "gm. nothing to report yet."));
     }
 
-    function test_tokenURI_hostileAccounts() public {
+    function test_livingURI_hostileAccounts() public {
         uint256 id = _mint(alice);
         _link();
         address acct = chog.daemonOf(id);
@@ -355,10 +429,10 @@ contract MockChogTest is Test {
     }
 
     // ------------------------------------------------------------------
-    // tokenURI: awake
+    // livingURI: awake
     // ------------------------------------------------------------------
 
-    function test_tokenURI_awakeFields() public {
+    function test_livingURI_awakeFields() public {
         (uint256 id, MockDaemonAccount acct) = _awakeChog();
         acct.setMood(IDaemonAccount.Mood.Smug);
         acct.setLifetimeYield(12.3456 ether);
@@ -376,7 +450,7 @@ contract MockChogTest is Test {
         assertTrue(_has(svg, "Lifetime yield 12.34"));
     }
 
-    function test_tokenURI_boostAura() public {
+    function test_livingURI_boostAura() public {
         (uint256 id, MockDaemonAccount acct) = _awakeChog();
         acct.setMood(IDaemonAccount.Mood.Flexing);
         acct.setBoost(11_500, block.timestamp + 3 hours);
@@ -395,7 +469,7 @@ contract MockChogTest is Test {
         assertFalse(_has(svg, "BOOST"));
     }
 
-    function test_tokenURI_everyMoodRenders() public {
+    function test_livingURI_everyMoodRenders() public {
         (uint256 id, MockDaemonAccount acct) = _awakeChog();
         string[5] memory names = ["Chill", "Smug", "Chaotic", "Flexing", "Tired"];
         // a marker drawn only for that mood
@@ -429,7 +503,7 @@ contract MockChogTest is Test {
     // escaping
     // ------------------------------------------------------------------
 
-    function test_tokenURI_escapesMaliciousMessage() public {
+    function test_livingURI_escapesMaliciousMessage() public {
         (uint256 id, MockDaemonAccount acct) = _awakeChog();
         acct.setMood(IDaemonAccount.Mood.Chill);
         string memory evil = "\"><script>alert('x')</script>&\\";
@@ -448,7 +522,7 @@ contract MockChogTest is Test {
         );
     }
 
-    function test_tokenURI_sanitizesControlAndInvalidUtf8() public {
+    function test_livingURI_sanitizesControlAndInvalidUtf8() public {
         (uint256 id, MockDaemonAccount acct) = _awakeChog();
         acct.setMessage(string(abi.encodePacked("a\nb\x01c", hex"ff", unicode"🔥")));
         string memory json = _json(id);
@@ -456,7 +530,7 @@ contract MockChogTest is Test {
         assertTrue(_has(_svgFromJson(json), unicode"a b c?🔥"));
     }
 
-    function test_tokenURI_longMessageTruncated() public {
+    function test_livingURI_longMessageTruncated() public {
         (uint256 id, MockDaemonAccount acct) = _awakeChog();
         bytes memory longMsg = new bytes(300);
         for (uint256 i; i < 300; ++i) {

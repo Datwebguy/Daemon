@@ -43,16 +43,19 @@ export function SiteFooter() {
     <footer className="relative overflow-hidden">
       {/* closing call to action */}
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
-        <div className="relative overflow-hidden rounded-[2.5rem] bg-jelly px-6 py-16 text-white sm:px-14 sm:py-20" data-reveal>
+        <div
+          className="sticker relative overflow-hidden !rounded-[2.5rem] bg-gradient-to-br from-[#ffe6f1] via-white to-[#e9e2ff] px-6 py-16 text-[#1e1238] sm:px-14 sm:py-20"
+          data-reveal
+        >
           <div aria-hidden className="absolute -right-10 -bottom-16 h-72 w-72 opacity-90 sm:h-96 sm:w-96">
             <Creature mood={3} boosted className="h-full w-full" />
           </div>
           <div className="relative max-w-xl">
-            <h2 className="font-display text-[clamp(2.2rem,5vw,3.8rem)] font-extrabold leading-[0.95] tracking-tight">Your Chog is waiting to wake up.</h2>
-            <p className="mt-5 text-lg text-white/80">It takes about a minute, it&apos;s free on the test network, and you can take everything back any time.</p>
+            <h2 className="font-display text-[clamp(2.2rem,5vw,3.8rem)] leading-[1]">Your Chog is waiting to wake up.</h2>
+            <p className="mt-5 text-lg text-[#1e1238]/70">It takes about a minute, it&apos;s free on the test network, and you can take everything back any time.</p>
             <Link
               href="/app"
-              className="mt-9 inline-flex items-center gap-3 rounded-full bg-white px-7 py-3.5 font-semibold text-jelly-deep shadow-[0_18px_40px_-16px_rgb(0_0_0/0.4)] transition hover:scale-[1.03] active:scale-[0.98]"
+              className="sticker sticker-pop squish mt-9 inline-flex items-center gap-3 !bg-jelly px-7 py-3.5 font-bold !text-white"
             >
               Wake your Daemon
             </Link>

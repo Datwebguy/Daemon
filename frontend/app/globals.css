@@ -6,20 +6,23 @@
 /* Tokens: "clay & jelly" — lilac day, violet night                    */
 /* ------------------------------------------------------------------ */
 :root {
-  --bg: #efe6fa;
-  --surface: #fbf8ff;
-  --surface-2: #e5d8f6;
-  --line: rgb(35 18 63 / 0.12);
+  --bg: #fffdf8;
+  --surface: #ffffff;
+  --surface-2: #f4effd;
+  --line: rgb(35 18 63 / 0.1);
   --fg: #1e1238;
-  --dim: #5e4f7d;
+  --dim: #5f5280;
   --jelly: #7a5af0;
   --jelly-deep: #5134c9;
   --jelly-soft: #b9a6fa;
   --spark: #ff7a45;
-  --mint: #12a57a;
-  --glow: rgb(122 90 240 / 0.35);
-  --clay-hi: rgb(255 255 255 / 0.75);
-  --clay-lo: rgb(81 52 201 / 0.18);
+  --mint: #0fa57a;
+  --pink: #ff7eb6;
+  --butter: #ffd84d;
+  --sky: #5cc6ff;
+  --glow: rgb(122 90 240 / 0.3);
+  --clay-hi: rgb(255 255 255 / 0.9);
+  --clay-lo: rgb(81 52 201 / 0.14);
 }
 .dark {
   --bg: #110b1f;
@@ -50,9 +53,19 @@
   --color-jelly-soft: var(--jelly-soft);
   --color-spark: var(--spark);
   --color-mint: var(--mint);
+  --color-pink: var(--pink);
+  --color-butter: var(--butter);
+  --color-sky: var(--sky);
   --color-night: #0b0814;
-  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
-  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-bagel), var(--font-onest), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-onest), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* The display face has a single weight: never fake a bolder one. */
+.font-display {
+  font-synthesis: none;
+  font-weight: 400 !important;
+  letter-spacing: -0.01em;
 }
 
 html {
@@ -67,6 +80,55 @@ body {
   color: var(--fg);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* ------------------------------------------------------------------ */
+/* Playful backgrounds: warm white with colour blobs, never flat       */
+/* ------------------------------------------------------------------ */
+.mesh {
+  background:
+    radial-gradient(38rem 28rem at 8% 6%, rgb(255 126 182 / 0.28), transparent 62%),
+    radial-gradient(34rem 26rem at 92% 12%, rgb(255 216 77 / 0.34), transparent 62%),
+    radial-gradient(40rem 30rem at 78% 78%, rgb(122 90 240 / 0.2), transparent 62%),
+    radial-gradient(30rem 24rem at 14% 82%, rgb(92 198 255 / 0.24), transparent 62%),
+    var(--bg);
+}
+.dark .mesh {
+  background:
+    radial-gradient(38rem 28rem at 8% 6%, rgb(255 126 182 / 0.16), transparent 62%),
+    radial-gradient(34rem 26rem at 92% 12%, rgb(255 216 77 / 0.1), transparent 62%),
+    radial-gradient(40rem 30rem at 78% 78%, rgb(143 114 255 / 0.22), transparent 62%),
+    radial-gradient(30rem 24rem at 14% 82%, rgb(92 198 255 / 0.12), transparent 62%),
+    var(--bg);
+}
+.dots {
+  background-image: radial-gradient(color-mix(in oklab, var(--fg) 14%, transparent) 1.2px, transparent 1.4px);
+  background-size: 22px 22px;
+}
+.sticker {
+  background: white;
+  color: #1e1238;
+  border: 3px solid #1e1238;
+  box-shadow: 4px 4px 0 #1e1238;
+  border-radius: 1.1rem;
+}
+.sticker-pop {
+  transition: transform 0.25s cubic-bezier(0.3, 1.6, 0.5, 1), box-shadow 0.25s;
+}
+.sticker-pop:hover {
+  transform: translate(-2px, -3px) rotate(-1.5deg);
+  box-shadow: 7px 8px 0 #1e1238;
+}
+.squish:active {
+  transform: scale(0.94, 1.06);
+}
+.drag-hint {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.drag-hint:active {
+  cursor: grabbing;
 }
 ::selection {
   background: var(--jelly);
@@ -228,6 +290,24 @@ body {
   to {
     background-position: 200% center;
   }
+}
+
+@keyframes squish-a {
+  0% { transform: scale(1, 1); }
+  30% { transform: scale(1.14, 0.84); }
+  60% { transform: scale(0.94, 1.1); }
+  100% { transform: scale(1, 1); }
+}
+@keyframes squish-b {
+  0% { transform: scale(1, 1); }
+  30% { transform: scale(0.86, 1.14); }
+  60% { transform: scale(1.08, 0.94); }
+  100% { transform: scale(1, 1); }
+}
+@keyframes puff {
+  0% { transform: translate(0, 0) scale(0.5); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translate(var(--dx, 0), -90px) scale(1.2); opacity: 0; }
 }
 
 .animate-portal {

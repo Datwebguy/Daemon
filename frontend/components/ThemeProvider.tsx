@@ -8,7 +8,7 @@ const ThemeContext = createContext<{ theme: Theme; toggle: () => void }>({ theme
 export const useTheme = () => useContext(ThemeContext);
 
 /** Inline script for <head>: applies the saved/preferred theme before paint. */
-export const themeInitScript = `(function(){try{var t=localStorage.getItem('daemon-theme');if(!t){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}document.documentElement.classList.toggle('dark',t==='dark');document.documentElement.dataset.theme=t}catch(e){}})();`;
+export const themeInitScript = `(function(){try{var t=localStorage.getItem('daemon-theme');if(!t){t='light'}document.documentElement.classList.toggle('dark',t==='dark');document.documentElement.dataset.theme=t}catch(e){}})();`;
 
 function readTheme(): Theme {
   if (typeof document === "undefined") return "light";

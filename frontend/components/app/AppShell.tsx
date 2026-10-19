@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -37,10 +36,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="relative min-h-screen">
-      {/* wallpaper: the jelly swirl, blurred and quiet */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <Image src="/media/hero-jelly.jpg" alt="" fill sizes="100vw" className="animate-drift object-cover opacity-30 blur-2xl saturate-150 dark:opacity-15" />
-        <div className="absolute inset-0 bg-bg/70" />
+      {/* warm white with soft colour blobs, plus a faint dot grid */}
+      <div aria-hidden className="mesh pointer-events-none fixed inset-0 -z-10">
+        <div className="dots absolute inset-0 opacity-50 [mask-image:linear-gradient(to_bottom,black,transparent_70%)]" />
       </div>
 
       {/* desktop rail */}

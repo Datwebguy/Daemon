@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { moodOf } from "@/lib/mood";
+import { ChogImage } from "./ChogImage";
 import { Creature } from "./creature/Creature";
 import { cx } from "./ui";
 
@@ -11,18 +12,26 @@ import { cx } from "./ui";
  */
 export function DaemonAvatar({
   image,
+  images,
+  name,
   mood,
   message,
   boosted,
   multiplier,
 }: {
+  /** Single image URL (kept for compatibility); prefer `images`. */
   image?: string;
+  /** Ordered fallback list of image URLs (from useChog().images). */
+  images?: readonly string[];
+  /** Used for the image's alt text, e.g. "CHOG #1462". */
+  name?: string;
   mood?: number;
   message?: string;
   boosted?: boolean;
   multiplier?: number;
 }) {
   const m = moodOf(mood);
+  const srcs = images?.length ? images : image ? [image] : [];
   const ref = useRef<HTMLDivElement>(null);
 
   const onMove = (e: React.PointerEvent) => {
@@ -63,12 +72,21 @@ export function DaemonAvatar({
           className="relative aspect-square overflow-hidden rounded-[2rem] border border-white/40 shadow-[0_40px_80px_-40px_var(--glow)] transition-transform duration-300 ease-out [transform:rotateX(var(--rx,0deg))_rotateY(var(--ry,0deg))] [transform-style:preserve-3d]"
           style={{ background: `radial-gradient(70% 70% at 50% 40%, ${m?.hex ?? "#b9a6fa"}66, var(--surface-2))` }}
         >
-          {image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={image} alt="This Chog" className="h-full w-full object-cover" />
-          ) : (
-            <Creature mood={mood} boosted={boosted} track className="h-full w-full p-6" />
-          )}
+          <ChogImage
+            srcs={srcs}
+            eager
+            alt={name ?? "This Chog"}
+            fallback={<Creature mood={mood} boosted={boosted} track className="h-full w-full p-6" />}
+            overlay={
+              <div
+                className="absolute bottom-3 left-3 h-14 w-14 overflow-hidden rounded-full border-2 border-white/70 shadow-lg"
+                style={{ background: `radial-gradient(circle at 50% 40%, ${m?.hex ?? "#a8a3b8"}88, var(--surface))` }}
+                title={m ? `Feeling ${m.name}` : "Asleep"}
+              >
+                <Creature mood={mood} boosted={boosted} className="h-full w-full p-1" />
+              </div>
+            }
+          />
           {/* holographic glare */}
           <div
             aria-hidden

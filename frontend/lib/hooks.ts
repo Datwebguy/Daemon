@@ -8,7 +8,8 @@ import { daemonAccountAbi, erc20Abi, erc6551RegistryAbi, mockChogAbi, strategyRe
 import { CHAIN_ID, contracts, env, LOG_BLOCK_RANGE } from "./config";
 import { isDecodeError, toBigIntSafe } from "./format";
 import { gql, indexerConfigured, OWNED_QUERY } from "./indexer";
-import { parseTokenUri } from "./tokenUri";
+import { fetchIpfsJson, isIpfsUri } from "./ipfs";
+import { cleanAttributes, imageSources, parseTokenUri, type TokenMetadata } from "./tokenUri";
 
 export { useNow, useSlowNow } from "./clock";
 
@@ -17,7 +18,7 @@ const Z = zeroAddress;
 const REFRESH = 10_000;
 /** Polling for background widgets (cards in a grid). */
 const BACKGROUND = 60_000;
-/** tokenURI (a large on-chain SVG) is refetched at most this often. */
+/** tokenURI is refetched at most this often. */
 const TOKEN_URI_REFRESH = 60_000;
 
 /** `live`: the caller is the active Daemon page (fast polling). List cards pass live=false. */
@@ -190,7 +191,7 @@ export function useChog(tokenId: bigint | undefined, { live = true }: LiveOpt = 
     query: { enabled, refetchInterval: live ? REFRESH : BACKGROUND },
   });
   const ownerRes = ownerRead.data?.[0];
-  // tokenURI is a large on-chain SVG: fetched rarely and never on the fast poll.
+  // tokenURI: fetched rarely and never on the fast poll.
   const art = useReadContracts({
     contracts: [
       { address: chog ?? Z, abi: mockChogAbi, functionName: "tokenURI", args: [id], chainId: CHAIN_ID },
@@ -203,11 +204,36 @@ export function useChog(tokenId: bigint | undefined, { live = true }: LiveOpt = 
     },
   });
   const uri = art.data?.[0]?.result;
-  const metadata = useMemo(() => parseTokenUri(uri), [uri]);
+  const remote = isIpfsUri(uri);
+  // On-chain (data:) metadata is parsed locally; hosted metadata is fetched without ever blocking the page.
+  const inline = useMemo(() => (remote ? undefined : parseTokenUri(uri)), [uri, remote]);
+  const hosted = useQuery({
+    queryKey: ["chog-metadata", uri],
+    queryFn: () => fetchIpfsJson<TokenMetadata>(uri as string),
+    enabled: remote,
+    staleTime: Infinity,
+    gcTime: 24 * 60 * 60 * 1000,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+  const raw = remote ? hosted.data : inline;
+  const images = useMemo(() => imageSources(raw?.image), [raw?.image]);
+  const attributes = useMemo(() => cleanAttributes(raw?.attributes), [raw?.attributes]);
+  const metadata = useMemo(() => (raw ? { ...raw, image: images[0] } : undefined), [raw, images]);
   return {
     owner: ownerRes?.result,
     exists: ownerRes ? ownerRes.status === "success" : undefined,
     metadata,
+    /** First image URL (https or data:). */
+    image: images[0],
+    /** Every URL to try for the image, in order; step through with onError. */
+    images,
+    /** Real Chog Genesis traits ({ trait_type, value }), empty until loaded. */
+    attributes,
+    /** e.g. "CHOG #1462" */
+    realName: raw?.name,
+    /** True while the art/trait file is still loading (never blocks the page). */
+    metaLoading: remote ? hosted.isLoading : false,
     traits: art.data?.[1]?.result,
     isLoading: ownerRead.isLoading,
     error: ownerRead.error,

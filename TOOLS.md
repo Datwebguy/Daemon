@@ -62,6 +62,11 @@ Full research: `reports/Monad ecosystem tools for Daemon.md`
 - **Reference keeper** (optional, open source): small Node + viem script calling `DaemonHub.compoundMany`; anyone can run their own
 - **Chog tooling**: chog.xyz lists Swap, PFP Maker, Snapshoter and Messenger; no SDK or API found
 
+## Real Chog Art
+
+- Real collection: Chog Genesis on Monad mainnet, `0xc96d31F8626c6D03Fae5dCD3d61e3FB9F4a73763`, 1,969 tokens. Metadata folder `ipfs://bafybeid4ybujnscdipkno7ps5utqelp5ry5ryreqhay3zhgk3a6x4jruqu/<1..1969>.json`; art lives under a separate folder referenced inside each JSON.
+- Gateways that work for plain content with open CORS: `https://ipfs.filebase.io/ipfs/` (fast) and `https://gateway.pinata.cloud/ipfs/` (slower). `ipfs.io` and `dweb.link` no longer serve plain content.
+
 ## Not Used (by design)
 
 - **Session keys / delegations** (ZeroDev Kernel, Openfort, ERC-7579/7710/7715 modules): Daemon has no operator and no delegated authority.

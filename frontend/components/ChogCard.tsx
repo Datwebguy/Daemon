@@ -5,6 +5,7 @@ import { fmtUnits } from "@/lib/format";
 import { useChog, useDaemonAddress, useDaemonSummary, useProtocol, useSlowNow } from "@/lib/hooks";
 import { moodOf } from "@/lib/mood";
 import { useInView } from "@/lib/useInView";
+import { ChogImage } from "./ChogImage";
 import { Creature } from "./creature/Creature";
 import { cx, Spinner } from "./ui";
 
@@ -30,7 +31,7 @@ function ChogCardBody({ tokenId }: { tokenId: bigint }) {
       </div>
     );
   }
-  const image = chog.metadata?.image;
+  const cardMood = daemon.deployed ? state.mood : undefined;
   return (
     <Link
       href={`/daemon/${tokenId.toString()}`}
@@ -40,12 +41,20 @@ function ChogCardBody({ tokenId }: { tokenId: bigint }) {
         className="relative aspect-square overflow-hidden rounded-[1.35rem]"
         style={{ background: `radial-gradient(70% 70% at 50% 40%, ${m?.hex ?? "#b9a6fa"}55, var(--surface-2))` }}
       >
-        {image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={image} alt={`Chog #${tokenId.toString()}`} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
-        ) : (
-          <Creature mood={daemon.deployed ? state.mood : undefined} className="h-full w-full p-4" />
-        )}
+        <ChogImage
+          srcs={chog.images}
+          alt={chog.realName ?? `Chog #${tokenId.toString()}`}
+          className="group-hover:scale-105"
+          overlay={
+            <div
+              className="absolute bottom-2 left-2 h-12 w-12 overflow-hidden rounded-full border-2 border-white/70 shadow-md"
+              style={{ background: `radial-gradient(circle at 50% 40%, ${m?.hex ?? "#a8a3b8"}88, var(--surface))` }}
+            >
+              <Creature mood={cardMood} boosted={boosted} className="h-full w-full p-0.5" />
+            </div>
+          }
+          fallback={<Creature mood={cardMood} className="h-full w-full p-4" />}
+        />
         {boosted && (
           <span className="absolute left-2.5 top-2.5 rounded-full bg-spark px-2.5 py-1 text-[11px] font-bold text-white shadow">⚡ Boosted</span>
         )}

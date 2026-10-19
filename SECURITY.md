@@ -33,6 +33,7 @@ Fixed:
 - **Cooldowns on transfer:** compound/hype cooldowns are not reset when the NFT changes hands (the account cannot observe transfers). No authority is retained by the previous owner.
 - **Reward vaults:** funds notified while a vault has zero depositors stay in the vault; there is no rescue function by design.
 - **Free mint uses `_mint`, not `_safeMint`.** Wallets upgraded with EIP-7702 (common on Monad) are EOAs with code and often cannot answer `onERC721Received`, so a safe mint would revert for them. The recipient is always the caller. A regression test covers this.
+- **Testnet Chogs carry real artwork by reference.** `tokenURI` points at the real Chog Genesis metadata on IPFS (1,969 artworks, chosen pseudo-randomly at mint, duplicates possible). It depends on public IPFS gateways staying available; the app tries two and falls back to the drawn creature. The collection and its metadata are not ours and could change.
 - **Test reward pools are small by design.** Vault emissions are fixed and shared by all depositors, so yield per dUSD falls as deposits grow. The defaults (1,000 and 3,000 DMNR over 30 days) suit a few dozen testers.
 - **`tokenURI` gas:** about 655k gas is needed. A node with a lower `eth_call` gas cap would fail to render images.
 - **Gas reimbursement** is an estimate, capped by `gasReimbursementCap`.

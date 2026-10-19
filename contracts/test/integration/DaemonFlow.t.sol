@@ -87,7 +87,8 @@ contract DaemonFlowTest is Test, DaemonDeploy {
         assertTrue(bytes(account.lastMessage()).length > 0);
 
         // the NFT image reflects a live Daemon
-        assertGt(bytes(d.chog.tokenURI(tokenId)).length, 1000);
+        assertGt(bytes(d.chog.livingURI(tokenId)).length, 1000);
+        assertGt(bytes(d.chog.tokenURI(tokenId)).length, 60); // real Chog Genesis ipfs:// pointer
 
         // cooldown again right after compounding
         vm.expectRevert();

@@ -1,9 +1,32 @@
+import { ipfsUrls } from "./ipfs";
+
+export type TokenAttribute = { trait_type?: string; value?: string | number };
+
 export type TokenMetadata = {
   name?: string;
   description?: string;
   image?: string;
-  attributes?: { trait_type?: string; value?: string | number }[];
+  attributes?: TokenAttribute[];
 };
+
+/** Ordered list of https/data URLs for an image field (ipfs:// expands to every gateway). */
+export function imageSources(img: string | undefined): string[] {
+  if (!img) return [];
+  const v = img.trim();
+  if (v.startsWith("<svg")) return [`data:image/svg+xml;charset=utf-8,${encodeURIComponent(v)}`];
+  return ipfsUrls(v);
+}
+
+/** Real attributes as clean {trait_type, value} strings (empty names dropped, values stringified). */
+export function cleanAttributes(attrs: TokenAttribute[] | undefined): { trait_type: string; value: string }[] {
+  const out: { trait_type: string; value: string }[] = [];
+  for (const a of attrs ?? []) {
+    const k = a?.trait_type?.toString().trim();
+    const v = a?.value === undefined || a?.value === null ? "" : String(a.value).trim();
+    if (k) out.push({ trait_type: k, value: v });
+  }
+  return out;
+}
 
 function decodeBase64Utf8(b64: string): string {
   const bin = atob(b64);
@@ -15,7 +38,7 @@ function normalizeImage(img: string | undefined): string | undefined {
   if (!img) return undefined;
   const v = img.trim();
   if (v.startsWith("<svg")) return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(v)}`;
-  if (v.startsWith("ipfs://")) return `https://ipfs.io/ipfs/${v.slice(7)}`;
+  if (v.startsWith("ipfs://")) return ipfsUrls(v)[0];
   return v;
 }
 

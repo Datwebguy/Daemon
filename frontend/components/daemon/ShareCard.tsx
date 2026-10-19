@@ -102,7 +102,7 @@ function ShareCard({ ctx, image }: { ctx: DaemonCtx; image?: string }) {
           <div className="absolute -right-4 -bottom-6 h-[78%] w-[52%]">
             {image ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={image} alt="" className="h-full w-full rounded-[1.5rem] object-cover shadow-2xl" />
+              <img src={image} alt="" crossOrigin="anonymous" className="h-full w-full rounded-[1.5rem] object-cover shadow-2xl" />
             ) : (
               <Creature mood={state.mood} className="h-full w-full" />
             )}

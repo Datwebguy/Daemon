@@ -89,7 +89,7 @@ export function DaemonView({ tokenId }: { tokenId: bigint }) {
         <span className={cx("rounded-full px-3 py-1 text-sm font-semibold", isOwner ? "bg-jelly text-white" : "bg-surface-2 text-dim")}>
           {isOwner ? "Yours" : owner ? `Held by ${shortAddr(owner)}` : "Visitor"}
         </span>
-        <div className="ml-auto">{ctx && awake && <ShareButton ctx={ctx} image={chog.metadata?.image} />}</div>
+        <div className="ml-auto">{ctx && awake && <ShareButton ctx={ctx} image={chog.image} />}</div>
       </header>
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:gap-10">
@@ -97,20 +97,14 @@ export function DaemonView({ tokenId }: { tokenId: bigint }) {
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <div className="clay rounded-[2.25rem] px-5 pb-7 pt-6">
             <DaemonAvatar
-              image={chog.metadata?.image}
+              images={chog.images}
+              name={chog.realName ?? `Chog #${tokenId.toString()}`}
               mood={awake ? state.mood : undefined}
               message={awake ? state.lastMessage : undefined}
               boosted={boostLive}
               multiplier={mult}
             />
-            {chog.traits && (
-              <dl className="mt-7 grid grid-cols-2 gap-2 text-sm">
-                <Trait k="Vibe" v={vibeName(chog.traits.vibe)} />
-                <Trait k="Body" v={BODIES[chog.traits.body] ?? "Mystery"} />
-                <Trait k="Eyes" v={EYES[chog.traits.eyes] ?? "Mystery"} />
-                <Trait k="Backdrop" v={BACKGROUNDS[chog.traits.background] ?? "Mystery"} />
-              </dl>
-            )}
+            <Traits chog={chog} />
             {awake && daemon.address && (
               <details className="mt-4 text-sm">
                 <summary className="cursor-pointer text-dim hover:text-fg">Daemon wallet details</summary>
@@ -183,6 +177,62 @@ export function DaemonView({ tokenId }: { tokenId: bigint }) {
         </div>
       </div>
     </div>
+  );
+}
+
+type ChogData = ReturnType<typeof useChog>;
+
+const TIER_STYLE: Record<string, string> = {
+  common: "bg-slate-400/20 text-slate-700 dark:text-slate-300",
+  uncommon: "bg-emerald-400/20 text-emerald-700 dark:text-emerald-300",
+  rare: "bg-sky-400/20 text-sky-700 dark:text-sky-300",
+  epic: "bg-violet-500/20 text-violet-700 dark:text-violet-300",
+  legendary: "bg-amber-400/25 text-amber-700 dark:text-amber-300",
+};
+const SHOWN = ["Head", "Eyes", "Accessory", "Body", "Background", "Form"] as const;
+const isEmpty = (v: string) => !v || /^(none|null|undefined|-)$/i.test(v);
+
+/** The Chog's real traits; falls back to the Daemon's own invented traits if the art data is unavailable. */
+function Traits({ chog }: { chog: ChogData }) {
+  const find = (name: string) => chog.attributes.find((a) => a.trait_type.toLowerCase() === name.toLowerCase())?.value;
+  const tier = find("Tier");
+  const chips = SHOWN.map((k) => ({ k, v: find(k) })).filter((c): c is { k: (typeof SHOWN)[number]; v: string } => c.v !== undefined && !isEmpty(c.v));
+
+  if (chog.attributes.length > 0 && (tier || chips.length > 0)) {
+    return (
+      <div className="mt-7">
+        {chog.realName && <p className="mb-3 text-center text-xs text-dim">{chog.realName} · testnet replica</p>}
+        {tier && !isEmpty(tier) && (
+          <div className="mb-3 flex justify-center">
+            <span
+              className={cx(
+                "rounded-full px-4 py-1.5 font-display text-base font-extrabold tracking-wide",
+                TIER_STYLE[tier.toLowerCase()] ?? "bg-surface-2 text-fg",
+              )}
+            >
+              {tier}
+            </span>
+          </div>
+        )}
+        <dl className="flex flex-wrap justify-center gap-1.5 text-xs">
+          {chips.map((c) => (
+            <div key={c.k} className="rounded-full bg-surface-2 px-3 py-1.5">
+              <dt className="inline text-dim">{c.k}: </dt>
+              <dd className="inline font-semibold">{c.v}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    );
+  }
+  if (!chog.traits) return null;
+  return (
+    <dl className="mt-7 grid grid-cols-2 gap-2 text-sm">
+      <Trait k="Vibe" v={vibeName(chog.traits.vibe)} />
+      <Trait k="Body" v={BODIES[chog.traits.body] ?? "Mystery"} />
+      <Trait k="Eyes" v={EYES[chog.traits.eyes] ?? "Mystery"} />
+      <Trait k="Backdrop" v={BACKGROUNDS[chog.traits.background] ?? "Mystery"} />
+    </dl>
   );
 }
 

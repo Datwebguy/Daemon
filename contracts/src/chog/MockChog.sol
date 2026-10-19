@@ -10,14 +10,19 @@ import {IERC6551Registry} from "../interfaces/IERC6551.sol";
 import {ChogArt} from "./ChogArt.sol";
 import {ChogText} from "./ChogText.sol";
 
-/// @title MockChog ("Test Chog", tCHOG)
-/// @notice Free-mint testnet stand-in for Chog NFTs. Each token gets on-chain traits at mint and a fully
-/// on-chain, live `tokenURI` that reflects the state of its Daemon (ERC-6551 token-bound account):
-/// mood, boost and lifetime yield, plus the Daemon's last message.
+/// @title MockChog ("Chog Genesis (Testnet)", tCHOG)
+/// @notice Free-mint testnet replica of the Chog Genesis collection (Monad mainnet
+/// 0xc96d31F8626c6D03Fae5dCD3d61e3FB9F4a73763, 1,969 tokens). It carries the REAL Chog Genesis artwork BY
+/// REFERENCE: at mint each token is assigned an artwork id in 1..`ART_SUPPLY`, and `tokenURI` returns the real
+/// IPFS metadata pointer `ipfs://<CID>/<artId>.json`, so wallets and marketplaces show the real Chog image and
+/// traits. Duplicate artwork across testnet tokens is possible and accepted.
+/// @dev The mood/yield state of the token's Daemon (ERC-6551 token-bound account) lives in `livingURI`, a fully
+/// on-chain, live metadata JSON with a generated SVG: mood, boost and lifetime yield, plus the Daemon's last
+/// message. The cheap on-chain pseudo-traits (`IChogTraits`) are kept unchanged; they only bias Daemon moods.
 /// @dev Traits use a cheap pseudo-random hash (prevrandao/blockhash + tokenId + minter). It is NOT secure
 /// randomness and is fine only because this is a free testnet mock.
 /// The Daemon link (registry, implementation, salt) can be set exactly once by the deployer and is immutable after.
-/// `tokenURI` never reverts because of the Daemon account: every read is a gas-capped staticcall whose return
+/// `livingURI` never reverts because of the Daemon account: every read is a gas-capped staticcall whose return
 /// data is bounds-checked by hand.
 contract MockChog is ERC721, IChogTraits {
     // ------------------------------------------------------------------
@@ -61,6 +66,11 @@ contract MockChog is ERC721, IChogTraits {
     /// @notice Max bytes of the message shown in the SVG caption.
     uint256 public constant MAX_CAPTION_BYTES = 44;
 
+    /// @notice Number of distinct real Chog Genesis artworks (ids 1..ART_SUPPLY).
+    uint256 public constant ART_SUPPLY = 1969;
+    /// @notice IPFS folder holding the real Chog Genesis metadata (`<artId>.json`).
+    string public constant METADATA_BASE_URI = "ipfs://bafybeid4ybujnscdipkno7ps5utqelp5ry5ryreqhay3zhgk3a6x4jruqu/";
+
     uint256 private constant VIEW_GAS = 100_000;
     uint256 private constant MESSAGE_GAS = 300_000;
 
@@ -89,6 +99,9 @@ contract MockChog is ERC721, IChogTraits {
 
     mapping(uint256 => Traits) private _traits;
 
+    /// @notice Real Chog Genesis artwork id (1..ART_SUPPLY) assigned to each token at mint (0 if not minted).
+    mapping(uint256 => uint256) public artIdOf;
+
     /// @dev Live state read from a Daemon account. Each field is only valid if its `*Ok` flag is set.
     struct DaemonState {
         address account;
@@ -104,7 +117,7 @@ contract MockChog is ERC721, IChogTraits {
 
     /// @param maxPerAddress_ Max tokens one address can mint (e.g. 3).
     /// @param maxSupply_ Max tokens that can ever exist.
-    constructor(uint256 maxPerAddress_, uint256 maxSupply_) ERC721("Test Chog", "tCHOG") {
+    constructor(uint256 maxPerAddress_, uint256 maxSupply_) ERC721("Chog Genesis (Testnet)", "tCHOG") {
         if (maxPerAddress_ == 0 || maxSupply_ == 0) revert InvalidConfig();
         deployer = msg.sender;
         maxPerAddress = maxPerAddress_;
@@ -123,6 +136,10 @@ contract MockChog is ERC721, IChogTraits {
         tokenId = ++totalSupply;
         ++mintedBy[msg.sender];
         _traits[tokenId] = _rollTraits(tokenId, msg.sender);
+        // Not secure randomness (see contract notes); duplicates across tokens are acceptable on testnet.
+        artIdOf[tokenId] = 1
+            + uint256(keccak256(abi.encode(block.prevrandao, tokenId, msg.sender, blockhash(block.number - 1))))
+                % ART_SUPPLY;
         // Plain _mint, not _safeMint: wallets upgraded with EIP-7702 (common on Monad) are EOAs with code and
         // often cannot answer onERC721Received, which would make a free mint revert for them. The recipient is
         // always the caller, so there is nothing to protect, and skipping the callback also removes a reentrancy hook.
@@ -180,8 +197,16 @@ contract MockChog is ERC721, IChogTraits {
     // Metadata
     // ------------------------------------------------------------------
 
-    /// @notice Fully on-chain metadata: base64 JSON with a base64 SVG image built from live Daemon state.
+    /// @notice The REAL Chog Genesis metadata pointer: `ipfs://<CID>/<artId>.json`.
+    /// @dev Reverts with ERC721NonexistentToken for tokens that do not exist.
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        _requireOwned(tokenId);
+        return string.concat(METADATA_BASE_URI, Strings.toString(artIdOf[tokenId]), ".json");
+    }
+
+    /// @notice Fully on-chain "living" metadata: base64 JSON with a base64 SVG image built from live Daemon state
+    /// (mood, boost, lifetime yield, last message). Never reverts because of a hostile Daemon account.
+    function livingURI(uint256 tokenId) public view returns (string memory) {
         _requireOwned(tokenId);
         DaemonState memory s = readDaemonState(tokenId);
         ChogArt.Params memory p = _params(tokenId, s);
@@ -193,7 +218,7 @@ contract MockChog is ERC721, IChogTraits {
             '","image":"data:image/svg+xml;base64,',
             Base64.encode(bytes(ChogArt.render(p))),
             '","attributes":',
-            _attributes(p),
+            _attributes(p, artIdOf[tokenId]),
             "}"
         );
         return string.concat("data:application/json;base64,", Base64.encode(bytes(json)));
@@ -261,7 +286,7 @@ contract MockChog is ERC721, IChogTraits {
         return string.concat(base, "Last message: ", ChogText.escapeJson(s.message));
     }
 
-    function _attributes(ChogArt.Params memory p) internal pure returns (string memory) {
+    function _attributes(ChogArt.Params memory p, uint256 artId) internal pure returns (string memory) {
         string memory traits = string.concat(
             _attr("[", "Background", ChogArt.backgroundName(p.traits.background)),
             _attr(",", "Body", ChogArt.bodyName(p.traits.body)),
@@ -274,7 +299,9 @@ contract MockChog is ERC721, IChogTraits {
             _attr(",", "Boost multiplier", ChogText.formatBps(p.boostBps)),
             ',{"trait_type":"Lifetime Yield","display_type":"number","value":',
             p.yieldText,
-            "}]"
+            "}",
+            _attr(",", "Artwork", Strings.toString(artId)),
+            "]"
         );
         return string.concat(traits, live);
     }

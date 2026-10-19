@@ -1,12 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Figtree } from "next/font/google";
+import { Bagel_Fat_One, Onest } from "next/font/google";
 import type { ReactNode } from "react";
 import { Providers } from "@/components/Providers";
 import { themeInitScript } from "@/components/ThemeProvider";
 import "./globals.css";
 
-const display = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-bricolage", display: "swap" });
-const body = Figtree({ subsets: ["latin"], variable: "--font-figtree", display: "swap" });
+const display = Bagel_Fat_One({ subsets: ["latin"], weight: "400", variable: "--font-bagel", display: "swap" });
+const body = Onest({ subsets: ["latin"], variable: "--font-onest", display: "swap" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
