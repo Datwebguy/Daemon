@@ -88,11 +88,24 @@ export function ShareButton({ ctx, images, bar }: { ctx: DaemonCtx; images?: rea
 /** The saved picture always uses fixed colours, so it looks the same whatever theme you are in. */
 const INK = "#1e1238";
 
-/** A ready-to-post X link: what the Daemon is doing, plus a link anyone can open to hype it. */
+/** A ready-to-post X link: a short, all lowercase note about this Daemon that invites people to come and try. */
+const MOOD_LINE: Record<string, string> = {
+  chill: "is just vibing today",
+  smug: "is feeling a little smug today",
+  chaotic: "is in a chaotic mood today",
+  flexing: "is flexing hard today",
+  tired: "is a bit tired and could use some love",
+};
+function postText(tokenId: bigint, mood: string | undefined, yieldLine: string): string {
+  const feel = MOOD_LINE[(mood ?? "").toLowerCase()] ?? "just woke up";
+  const amount = yieldLine.replace(/^\+/, "").toLowerCase();
+  const earned = amount.endsWith("last harvest") ? `brought in ${amount.replace(" last harvest", "")} on its last harvest` : `has earned ${amount.replace(" earned so far", "")} so far`;
+  const text = `my chog #${tokenId.toString()} ${feel}. its daemon is a little wallet of its own on monad, and it ${earned} while i did nothing. you can hype it to give it a boost, or harvest it yourself and keep the tip. every chog can have one, so come wake yours for free`;
+  return text;
+}
 function xPostUrl(tokenId: bigint, mood: string | undefined, yieldLine: string): string {
   const link = typeof window !== "undefined" ? `${window.location.origin}/daemon/${tokenId.toString()}` : "";
-  const text = `My Chog #${tokenId.toString()} is feeling ${mood ? mood.toLowerCase() : "sleepy"} and its Daemon is working while I'm not. ${yieldLine}. Come hype it:`;
-  return `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(link)}`;
+  return `https://x.com/intent/post?text=${encodeURIComponent(postText(tokenId, mood, yieldLine))}&url=${encodeURIComponent(link)}`;
 }
 
 function ShareCard({ ctx, images }: { ctx: DaemonCtx; images?: readonly string[] }) {
@@ -173,7 +186,8 @@ function ShareCard({ ctx, images }: { ctx: DaemonCtx; images?: readonly string[]
           </div>
         </div>
       </div>
-      <div className="mt-4 grid gap-3 sm:mt-5 sm:grid-cols-2">
+      <p className="dm-note mt-4 text-sm leading-relaxed sm:mt-5">{postText(tokenId, m?.name, yieldLine)}</p>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <StickerButton tone="jelly" size="lg" className="w-full" onClick={download} loading={busy}>
           Save image
         </StickerButton>
