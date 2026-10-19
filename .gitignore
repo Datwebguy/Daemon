@@ -22,3 +22,13 @@ script/.chog-metadata/
 
 # demo video work (large, local only)
 video/
+
+# private working notes (local only)
+AGENT.md
+HACKATHON.md
+HANDOVER.md
+PRJ.md
+PRODUCT.md
+PROMPT.md
+RESOURCES.md
+TOOLS.md

@@ -2,7 +2,7 @@ import { isAddress, isHex, type Address, type Hex } from "viem";
 import { monadTestnet } from "viem/chains";
 
 /**
- * All addresses come from NEXT_PUBLIC_* env vars (see .env.example / HANDOVER.md).
+ * All addresses come from NEXT_PUBLIC_* env vars (see .env.example).
  * Each var must be read with a literal `process.env.NEXT_PUBLIC_X` so Next.js can inline it.
  * Invalid or empty values become `undefined`; the UI then shows a
  * "contracts not deployed yet" notice for the affected feature.
