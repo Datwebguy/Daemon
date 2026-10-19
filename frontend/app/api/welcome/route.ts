@@ -15,7 +15,7 @@ import { chain, contracts, env } from "@/lib/config";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const CLAIM_GAS = BigInt(150_000); // Monad charges the gas limit: keep it tight (claim uses ~100k worst case)
+const CLAIM_GAS = BigInt(200_000); // Monad charges the gas limit; a first claim of the day estimates ~141k, so keep headroom
 
 const jwks = env.privyAppId ? createRemoteJWKSet(new URL(`https://auth.privy.io/api/v1/apps/${env.privyAppId}/jwks.json`)) : null;
 
