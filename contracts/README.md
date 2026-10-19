@@ -1,6 +1,6 @@
 # Daemon Contracts
 
-Foundry project for Daemon on Monad Testnet (10143). See the root README and PRJ.md for the design.
+Foundry project for Daemon on Monad Testnet (10143). See the root README for how it all fits together.
 
 ```bash
 forge build

@@ -65,7 +65,7 @@ npm run codegen           # writes .envio/ + envio-env.d.ts
 npm run dev               # needs Docker (Postgres + Hasura); GraphQL at http://localhost:8080/v1/graphql (admin secret: testing)
 ```
 
-**Placeholders** wait on the deployment: `ENVIO_DAEMON_IMPLEMENTATION` (required, startup fails without it), `ENVIO_MOCK_CHOG`, `ENVIO_DAEMON_SALT` (default `0x00…00`, must match the salt the frontend uses in `createAccount`) and `ENVIO_START_BLOCK`. The event signatures in `config.yaml` are copied from `contracts/src/interfaces/IDaemonAccount.sol` and `IERC6551.sol`. If the contracts change, update both `config.yaml` and `typecheck/envio-codegen-shim.d.ts`.
+**Configuration** (live values are in `contracts/deployments/monad-testnet.json`): `ENVIO_DAEMON_IMPLEMENTATION` (required, startup fails without it), `ENVIO_MOCK_CHOG`, `ENVIO_DAEMON_SALT` (default `0x00…00`, must match the salt the frontend uses in `createAccount`) and `ENVIO_START_BLOCK`. The event signatures in `config.yaml` are copied from `contracts/src/interfaces/IDaemonAccount.sol` and `IERC6551.sol`. If the contracts change, update both `config.yaml` and `typecheck/envio-codegen-shim.d.ts`.
 
 ### Windows
 The `envio` CLI ships native binaries for Linux and macOS only (`envio-linux-*`, `envio-darwin-*`). On Windows, `envio codegen` / `dev` fail with `Cannot read properties of null (reading 'runCli')`. `envio dev` also needs Docker. Use WSL2, Docker, CI or Envio Cloud to run it.
