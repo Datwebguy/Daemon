@@ -92,7 +92,7 @@ Network: Monad Testnet (Chain ID 10143). Faucet: https://faucet.monad.xyz
 2. Mint Test Chog (or use existing)
 3. Inspect Chog → deterministic ERC-6551 address, traits, balances, mood
 4. Pick a yield adapter and deposit
-5. Hype a Daemon (yours or anyone's) with a small amount of MON or $CHOG → mood updates, boost starts
+5. Hype a Daemon (yours or anyone's) with a small amount of MON or $CHOG → mood updates, boost starts. $CHOG gives a bigger, longer boost and burns 10%; "Feeling lucky?" adds a Pyth Entropy roll with a chance at a maxed, longer boost
 6. Click Compound → harvest → swap → restake runs, the caller earns the bounty, a new message appears
 7. Hit "Sweep All to My Wallet" to prove non-custodial exit
 8. Share performance card
@@ -101,11 +101,17 @@ Network: Monad Testnet (Chain ID 10143). Faucet: https://faucet.monad.xyz
 
 - **Landing page (`/`)**: an animated Daemon hero, the six-step story, a moods gallery, a live tip calculator, FAQ and footer.
 - **App (`/app`, `/daemon/[id]`, `/explore`, `/feed`)**: a plain-language interface with no technical wording. Your den lists your Chogs with a getting-started checklist; each Daemon page has Harvest, Hype and Vaults tabs, a share card, and a one-tap "take everything out". `?tab=hype` and `?tab=vaults` deep-link to a tab.
-- **Real Chog art on testnet.** The testnet "Chog Genesis (Testnet)" contract gives every mint one of the 1,969 real Chog Genesis artworks, by reference: `tokenURI` points at the real collection's metadata folder, so wallets and marketplaces show the real art and the real traits (Tier, Head, Eyes, Accessory, ...). The mood-aware, on-chain-drawn version lives in `livingURI`. These are not the real NFTs; they are testnet copies that carry the real artwork.
+- **Real Chog art on testnet.** The testnet "Chog Genesis (Testnet)" contract gives every mint one of the 1,969 real Chog Genesis artworks. `tokenURI` is on-chain JSON: the real image (IPFS), the real traits (Tier, Head, Eyes, Accessory, ...) and the live Daemon state (mood, boost, savings). The mood-aware, on-chain-drawn version lives in `livingURI`. These are not the real NFTs; they are testnet copies that carry the real artwork.
 - **Practice mode** (`/practice`): a no-sign-in sandbox Daemon with pretend money. Same rules as the contracts (tip ramps 5% to 10%, a boost is paid only from the hype jar, same mood priorities); time moves when you fast-forward.
 - Design notes: Bagel Fat One and Onest type, a white-based palette with pink, butter, sky and lilac washes (light by default, dark available), sticker-style panels, draggable stickers, no mascot and no emoji (the Chogs give the expressions: each mood maps to real Chogs whose eyes, mouth and head fit it, see frontend/lib/chogFaces.ts), a plain text wordmark until a logo is chosen, and Unsplash wallpapers (credited in the footer).
 
 ## Core Features
+
+- **Welcome MON**: a brand-new wallet gets a little free MON once (`WelcomeDrip`), so the first visit never starts at a faucet. The limits (one claim per wallet, only near-empty wallets, a daily cap) are enforced by the contract; the app's relayer only pays gas
+- **$CHOG is the better way to hype**: a $CHOG hype adds +0.10x for 4h (MON: +0.05x for 3h) and 10% of it is burned
+- **Lucky hype**: a MON hype plus a Pyth Entropy roll. The hype applies at once; when the number arrives, a critical roll (1 in 5) maxes the boost and extends it. The boost is still paid only from the jar
+- **Marketplace metadata**: `tokenURI` is on-chain JSON with the real Chog Genesis image, the real traits (all 1,969 packed on-chain and verified) and the live state of the Daemon. `livingURI` is the fully drawn mood image
+- **Needs-you badges** on den cards, **Post on X** on the share card, and a **testing guide** at `/guide`
 
 - ERC-6551 token-bound account per Chog (canonical registry)
 - Pluggable yield adapters behind a strategy registry

@@ -32,7 +32,7 @@ Prize pool: $15K (can be reduced to $10K if quality threshold is not met). Top 5
 | Retention | Boost expiry, neglect decay (Tired mood), new messages each cycle, leaderboard and feed, bounties for keepers |
 | Clarity | Sign in with email, mint, deposit, hype, compound, sweep: under 3 minutes |
 | Execution | Self-contained testnet deployment with two real ERC-4626 vaults, full Foundry coverage, no operator |
-| $CHOG | Hype payable in $CHOG; hype payments fund the boost pot; share burned or locked; tiered boosts for staking $CHOG |
+| $CHOG | The better way to hype: a $CHOG hype adds +0.10x for 4h (MON +0.05x for 3h) and burns 10% of the payment; hype payments fund the boost pot. On testnet this uses a test CHOG token because the real $CHOG lives on mainnet; the contracts take any ERC-20 as `chog`, so on mainnet it points at `0x350035555E10d9AfAF1566AaebfCeD5BA6C27777` |
 
 ## Registration Answers (Draft)
 
