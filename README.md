@@ -4,15 +4,15 @@
 
 # Daemon
 
-**Every Chog gets a little daemon: its own wallet that earns, compounds and has a mood.**
+### Every Chog gets its own wallet that earns, compounds and has a mood. On Monad.
 
-[**Open the app**](https://trydaemon.vercel.app) · [Try practice mode](https://trydaemon.vercel.app/practice) · [Live activity](https://trydaemon.vercel.app/feed)
+Daemon turns idle NFTs into assets that grow: savings that earn yield, a network paid to compound them, and a personality that shows you how they're doing.
 
-![Monad Testnet](https://img.shields.io/badge/Monad-Testnet%2010143-836EF9?style=flat-square)
-![ERC-6551](https://img.shields.io/badge/ERC--6551-token--bound%20accounts-1e1238?style=flat-square)
-![Contracts verified](https://img.shields.io/badge/contracts-verified-0fa57a?style=flat-square)
-![Solidity](https://img.shields.io/badge/Solidity-0.8.28-363636?style=flat-square)
-![Next.js](https://img.shields.io/badge/Next.js-16-000?style=flat-square)
+[![Open the app](https://img.shields.io/badge/Open%20the%20app-trydaemon.vercel.app-836EF9?style=for-the-badge)](https://trydaemon.vercel.app)
+[![Monad Testnet](https://img.shields.io/badge/Monad-Testnet%2010143-1e1238?style=for-the-badge)](https://testnet.monadvision.com/address/0x668AA46d926bA4e5F76EAf2242f3FD3Ffc0F5C09)
+[![Verified](https://img.shields.io/badge/Contracts-verified-0fa57a?style=for-the-badge)](#live-deployments)
+[![Chogathon](https://img.shields.io/badge/Chogathon-2026-ffd84d?style=for-the-badge)](https://chogathon.chog.xyz)
+[![Source](https://img.shields.io/badge/GitHub-source-181717?style=for-the-badge&logo=github)](https://github.com/Datwebguy/Daemon)
 
 <img src="brand/cover-x.png" alt="Daemon" />
 
@@ -20,19 +20,17 @@
 
 ---
 
-## What is Daemon?
+## The idea
 
-Most NFTs just sit in a wallet doing nothing. **Daemon puts your Chog to work.**
+**The problem.** NFTs sit in wallets doing nothing. DeFi could put them to work, but it asks for seed phrases, bridges, gas and constant attention, and it is no fun to watch.
 
-Every Chog NFT gets its own on-chain wallet, called a **Daemon** ([ERC-6551](https://eips.ethereum.org/EIPS/eip-6551) token-bound account). You put money in, it earns yield from vaults, and the rewards compound on their own. A keeper bot harvests for you, friends can hype your Daemon to boost its earnings, and its **mood** tells you at a glance how it's doing.
+**The fix.** Daemon gives every Chog its own on-chain wallet, a **Daemon** ([ERC-6551](https://eips.ethereum.org/EIPS/eip-6551) token-bound account). You put money in, it earns yield from vaults, and the rewards compound on their own. Anyone can harvest a ready Daemon and keep a small tip, so the network is paid to keep every Chog compounding. Friends can hype it to boost its earnings, and its **mood** tells you at a glance how it's doing. Sign-in is an email through Privy, and a new wallet gets its first MON for free.
 
-Your Chog stops being just a picture and becomes an asset that grows.
+### Built for
 
-| | |
-| --- | --- |
-| **Earns while you sleep** | Savings sit in yield vaults and compound automatically. Anyone can harvest a Daemon, and whoever does keeps a small tip, so the network is paid to keep every Chog compounding. |
-| **Fun to watch** | Five moods (Chill, Smug, Chaotic, Flexing, Tired) driven by real on-chain results. Each Daemon talks in its own voice in the live feed. |
-| **Your keys stay yours** | Only the Chog's holder can withdraw, in one tap. The wallet belongs to the NFT: sell the Chog and its savings go with it. No operator, no admin over funds. |
+| Chog holders | Friends and fans | Keepers |
+| --- | --- | --- |
+| Turn an idle NFT into savings that grow, with one-tap exit and the wallet bound to the Chog. | Hype any Daemon with MON or $CHOG to boost it, and watch its mood react. | Harvest ready Daemons from anywhere and keep the tip. An open-source keeper bot is included. |
 
 ---
 
@@ -56,6 +54,24 @@ Your Chog stops being just a picture and becomes an asset that grows.
 <td><img src="brand/screens/practice.jpg" alt="Practice mode" /><br/><b>Practice mode.</b> The same rules with pretend money and a fast-forward button. No sign-in needed.</td>
 </tr>
 </table>
+
+---
+
+## How to use Daemon
+
+**Start earning**
+1. Open [the app](https://trydaemon.vercel.app/app) and sign in with email, Google, X or a wallet.
+2. A new wallet gets a little welcome MON for fees, once per person.
+3. **Mint** a free Chog, then **Wake it up** to give it its own wallet.
+4. Take free test dollars from **Free supplies**, open **Vaults**, pick Stable or Degen and **Put it to work**.
+5. Come back any time: the savings grow, the mood changes, and **Take everything out** is always one tap.
+
+**Hype or harvest someone else's Daemon**
+1. Open **Find**, type a Chog number (or tap **Surprise me**) and **Visit**.
+2. **Hype** it with MON or $CHOG to boost its harvests, or tap **Harvest & keep the tip** when it's ready.
+3. Watch it appear in **Live** with the Daemon's own words.
+
+**No wallet yet?** [Practice mode](https://trydaemon.vercel.app/practice) runs the same rules with pretend money and a fast-forward button.
 
 ---
 
@@ -83,7 +99,7 @@ flowchart LR
 
 ---
 
-## Deployed contracts (Monad Testnet · 10143)
+## Live deployments
 
 All contracts are source-verified on [MonadVision](https://testnet.monadvision.com).
 
@@ -112,7 +128,7 @@ Machine-readable: [`contracts/deployments/monad-testnet.json`](contracts/deploym
 
 ---
 
-## Repository
+## Repository guide
 
 ```
 daemon/
@@ -123,8 +139,19 @@ daemon/
 └── brand/       Logo, banners and screenshots
 ```
 
-| Part | Stack | Docs |
+### How the pieces fit
+
+| Layer | Technology | Role |
 | --- | --- | --- |
+| Accounts | ERC-6551, `DaemonAccount` | One wallet per Chog, owned by whoever holds the NFT |
+| Yield | `StrategyRegistry`, Stable and Degen vaults | Approved places to earn, rewards swapped and put back to work |
+| Automation | `DaemonHub`, keeper bot (Node + viem) | Permissionless batch compounding, paid by the tip |
+| Fun | Hype jar, moods, Pyth Entropy | Boosts funded by hypers, moods from real results, lucky rolls |
+| Metadata | `ChogRealTraits`, on-chain `tokenURI` | Real Chog Genesis traits plus live Daemon state, readable by marketplaces |
+| Data | Envio HyperIndex + Hasura | Live feed, leaderboard and weekly seasons |
+| App | Next.js 16, wagmi, viem, Privy | Email sign-in, embedded wallets, welcome MON relayer |
+
+--- | --- | --- |
 | Contracts | Solidity 0.8.28, Foundry, OpenZeppelin | [contracts/README.md](contracts/README.md) |
 | App | Next.js 16, React 19, Tailwind 4, wagmi, viem, Privy | [frontend/.env.example](frontend/.env.example) |
 | Keeper | Node 22, viem | [keeper/README.md](keeper/README.md) |
@@ -133,6 +160,13 @@ daemon/
 ---
 
 ## Run it locally
+
+| Network | Value |
+| --- | --- |
+| Chain | Monad Testnet (10143) |
+| RPC | `https://testnet-rpc.monad.xyz` |
+| Explorer | [testnet.monadvision.com](https://testnet.monadvision.com) |
+| Faucet | [faucet.monad.xyz](https://faucet.monad.xyz) |
 
 **Requirements:** Node 22+, [Foundry](https://book.getfoundry.sh), and some testnet MON from the [Monad faucet](https://faucet.monad.xyz).
 
@@ -180,6 +214,8 @@ npm start
 - **Bounded compounding.** Approved vaults only, a rest timer, minimum-profit and slippage checks, and funds can only return to the same account.
 - **Honest boosts.** A boost is paid only from the hype jar. A lucky roll can raise the boost, never create value.
 - **Sybil-resistant welcome gift.** One per wallet and one per signed-in account, near-empty wallets only, with a daily cap enforced by the contract.
+
+> **The golden rule.** If Daemon vanished tomorrow, every holder could still withdraw everything, and anyone could still compound every Daemon. Nothing depends on us staying online.
 
 See [SECURITY.md](SECURITY.md) for the full review and how to report an issue.
 
