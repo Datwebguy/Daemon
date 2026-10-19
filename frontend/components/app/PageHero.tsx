@@ -26,7 +26,7 @@ export function PageHero({
   return (
     <section className="hero relative overflow-hidden" style={{ "--tone": `var(${tone})` } as CSSProperties}>
       <div aria-hidden className="tape-bg absolute inset-0 opacity-70 [mask-image:linear-gradient(100deg,black,transparent_65%)]" />
-      <div className="relative flex flex-wrap items-end justify-between gap-x-8 gap-y-6 px-4 py-8 sm:px-6 sm:py-10 lg:px-10">
+      <div className="relative flex flex-wrap items-end justify-between gap-x-8 gap-y-4 px-4 py-5 sm:px-6 sm:py-10 lg:px-10">
         <div className="min-w-0">
           <span
             className="stk inline-block -rotate-2 !rounded-lg px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em]"
@@ -34,8 +34,8 @@ export function PageHero({
           >
             {kicker}
           </span>
-          <h1 className="mt-4 font-display text-[clamp(2.6rem,8vw,5.4rem)] leading-[0.92] tracking-tight">{title}</h1>
-          {children && <p className="mt-4 max-w-xl text-base text-dim sm:text-lg">{children}</p>}
+          <h1 className="mt-3 font-display text-[clamp(2rem,8.5vw,5.4rem)] leading-[0.95] tracking-tight sm:mt-4">{title}</h1>
+          {children && <p className="mt-2 max-w-xl text-sm text-dim sm:mt-4 sm:text-lg">{children}</p>}
         </div>
         <div className="flex items-end gap-5">
           {aside}

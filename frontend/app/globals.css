@@ -100,6 +100,112 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* Headings never leave one word hanging; paragraphs avoid orphans. */
+h1,
+h2,
+h3,
+summary,
+blockquote {
+  text-wrap: balance;
+}
+p,
+li,
+dd {
+  text-wrap: pretty;
+}
+
+/* ------------------------------------------------------------------ */
+/* Ambient background: colour blobs drifting behind every page          */
+/* ------------------------------------------------------------------ */
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--bg);
+}
+.ambient i {
+  position: absolute;
+  width: 72vmax;
+  height: 72vmax;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--c), transparent);
+  opacity: var(--o, 0.5);
+  will-change: transform;
+  animation: amb-a var(--t, 28s) ease-in-out infinite alternate;
+}
+.ambient i:nth-child(1) {
+  --c: rgb(255 126 182 / 0.55);
+  left: -26vmax;
+  top: -24vmax;
+}
+.ambient i:nth-child(2) {
+  --c: rgb(255 216 77 / 0.6);
+  --t: 34s;
+  right: -30vmax;
+  top: -14vmax;
+  animation-name: amb-b;
+}
+.ambient i:nth-child(3) {
+  --c: rgb(122 90 240 / 0.42);
+  --t: 31s;
+  right: -18vmax;
+  bottom: -32vmax;
+}
+.ambient i:nth-child(4) {
+  --c: rgb(92 198 255 / 0.45);
+  --t: 37s;
+  left: -28vmax;
+  bottom: -28vmax;
+  animation-name: amb-b;
+}
+.dark .ambient i {
+  --o: 0.32;
+}
+.ambient-dots {
+  position: absolute;
+  inset: 0;
+  opacity: 0.4;
+  background-image: radial-gradient(color-mix(in oklab, var(--fg) 14%, transparent) 1.2px, transparent 1.4px);
+  background-size: 22px 22px;
+  mask-image: linear-gradient(to bottom, black, transparent 75%);
+  animation: amb-dots 60s linear infinite;
+}
+@keyframes amb-a {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(22vw, 16vh, 0) scale(1.15);
+  }
+  100% {
+    transform: translate3d(8vw, 34vh, 0) scale(0.92);
+  }
+}
+@keyframes amb-b {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1.05);
+  }
+  50% {
+    transform: translate3d(-24vw, 22vh, 0) scale(0.9);
+  }
+  100% {
+    transform: translate3d(-10vw, -12vh, 0) scale(1.12);
+  }
+}
+@keyframes amb-dots {
+  to {
+    background-position: 22px 220px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ambient i,
+  .ambient-dots {
+    animation: none;
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Playful backgrounds: warm white with colour blobs, never flat       */
 /* ------------------------------------------------------------------ */

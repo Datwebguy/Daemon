@@ -58,8 +58,8 @@ export function MyChogs() {
         face={{ mood: 0, seed: 3 }}
         aside={
           ids.length > 0 && (
-            <div className="stk -rotate-3 bg-butter px-4 py-2 text-center text-[#1e1238]">
-              <div className="font-display text-4xl leading-none tabular-nums">
+            <div className="stk -rotate-3 bg-butter px-3 py-1.5 text-center text-[#1e1238] sm:px-4 sm:py-2">
+              <div className="font-display text-2xl leading-none tabular-nums sm:text-4xl">
                 {ids.length}
                 {owned.data?.partial ? "+" : ""}
               </div>
@@ -73,10 +73,10 @@ export function MyChogs() {
 
       <QuestTape firstChog={ids[0]} />
 
-      <section aria-label="Your Chogs" className="px-4 py-10 sm:px-6 lg:px-10">
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-display text-3xl">Your Chogs</h2>
-          <Link href="/explore" className={cx("stk squish inline-flex items-center gap-2 !rounded-full bg-pink px-5 py-2 text-sm font-bold text-[#1e1238] transition-transform hover:-translate-y-0.5")}>
+      <section aria-label="Your Chogs" className="px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
+        <div className="mb-5 flex sm:mb-8 flex-wrap items-center justify-between gap-3">
+          <h2 className="font-display text-2xl sm:text-3xl">Your Chogs</h2>
+          <Link href="/explore" className={cx("stk squish inline-flex items-center gap-2 !rounded-full bg-pink px-4 py-1.5 text-xs font-bold sm:px-5 sm:py-2 sm:text-sm text-[#1e1238] transition-transform hover:-translate-y-0.5")}>
             Visit someone else&apos;s
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="M5 12h14M13 6l6 6-6 6" />
@@ -94,7 +94,7 @@ export function MyChogs() {
           <EmptyDen />
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6 lg:grid-cols-4 2xl:grid-cols-5">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 sm:gap-y-8 sm:gap-x-6 lg:grid-cols-4 2xl:grid-cols-5">
               {ids.slice(0, shown).map((id, i) => (
                 <div key={id.toString()} style={{ animation: `rise .6s ${Math.min(i, 8) * 60}ms ease both` }}>
                   <ChogCard tokenId={id} />

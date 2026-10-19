@@ -66,14 +66,14 @@ export function SiteFooter() {
       {/* closing call to action */}
       <div className="relative z-10 mx-auto max-w-6xl px-5 sm:px-8">
         <div
-          className="sticker relative overflow-hidden !rounded-[2.5rem] !bg-[linear-gradient(135deg,color-mix(in_oklab,var(--pink)_28%,var(--st-bg)),var(--st-bg)_55%,color-mix(in_oklab,var(--jelly)_28%,var(--st-bg)))] !text-[var(--st-fg)] px-6 py-14 sm:px-14 sm:py-16"
+          className="sticker relative overflow-hidden !rounded-[1.75rem] sm:!rounded-[2.5rem] !bg-[linear-gradient(135deg,color-mix(in_oklab,var(--pink)_28%,var(--st-bg)),var(--st-bg)_55%,color-mix(in_oklab,var(--jelly)_28%,var(--st-bg)))] !text-[var(--st-fg)] px-5 py-9 sm:px-14 sm:py-16"
           data-reveal
         >
           <div className="grid items-center gap-8 md:grid-cols-[1fr_auto]">
             <div>
-              <h2 className="font-display text-[clamp(2.2rem,5vw,3.8rem)] leading-[1]">Your Chog is waiting to wake up.</h2>
-              <p className="mt-4 max-w-xl text-lg opacity-75">It takes about a minute, it&apos;s free on the test network, and you can take everything back any time.</p>
-              <Link href="/app" className="sticker sticker-pop squish mt-8 inline-flex items-center gap-3 !bg-jelly px-7 py-3.5 font-bold !text-white">
+              <h2 className="font-display text-[clamp(1.85rem,7vw,3.8rem)] leading-[1]">Your Chog is waiting to wake up.</h2>
+              <p className="mt-3 max-w-xl text-[15px] opacity-75 sm:mt-4 sm:text-lg">It takes about a minute, it&apos;s free on the test network, and you can take everything back any time.</p>
+              <Link href="/app" className="sticker sticker-pop squish mt-6 inline-flex items-center gap-3 !bg-jelly px-5 py-2.5 text-sm font-bold !text-white sm:mt-8 sm:px-7 sm:py-3.5 sm:text-base">
                 Wake your Daemon
               </Link>
             </div>
@@ -85,9 +85,9 @@ export function SiteFooter() {
       </div>
 
       {/* the dark footer proper: zigzag edge, tucked behind the call to action */}
-      <div className="zigzag-top relative -mt-14 bg-night pt-28 text-white">
+      <div className="zigzag-top relative -mt-14 bg-night pt-24 text-white sm:pt-28">
         <div className="mx-auto max-w-6xl px-5 sm:px-8">
-          <div className="grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-[1.25fr_repeat(4,1fr)] md:gap-12">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-8 md:grid-cols-[1.25fr_repeat(4,1fr)] md:gap-12">
             <div className="col-span-2 md:col-span-1">
               <Logo light />
               <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/65">A little spirit for every Chog. It saves, earns and has opinions about it.</p>
@@ -97,8 +97,8 @@ export function SiteFooter() {
             </div>
             {COLS.map((c) => (
               <nav key={c.title} aria-label={c.title}>
-                <h3 className="font-display text-lg text-white">{c.title}</h3>
-                <ul className="mt-4 space-y-3 text-sm">
+                <h3 className="font-display text-base text-white sm:text-lg">{c.title}</h3>
+                <ul className="mt-3 space-y-2 text-sm sm:mt-4 sm:space-y-3">
                   {c.links.map((l) => (
                     <li key={l.label}>
                       <FooterLinkItem l={l} />

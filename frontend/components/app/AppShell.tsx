@@ -49,11 +49,6 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="relative min-h-dvh">
-      {/* colour-wash background, fixed so both themes stay colourful */}
-      <div aria-hidden className="mesh pointer-events-none fixed inset-0 -z-10">
-        <div className="dots absolute inset-0 opacity-50 [mask-image:linear-gradient(to_bottom,black,transparent_70%)]" />
-      </div>
-
       {/* desktop rail: glued to the left edge */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-28 flex-col border-r-4 border-[color:var(--st-line)] bg-[var(--surface)] lg:flex">
         <div className="flex justify-center pb-4 pt-5 [&>a>span]:text-[1.5rem]">
