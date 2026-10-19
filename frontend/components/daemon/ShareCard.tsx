@@ -47,10 +47,26 @@ function useLastYield(account: Address, tokenId: bigint, enabled: boolean) {
   });
 }
 
-export function ShareButton({ ctx, images }: { ctx: DaemonCtx; images?: readonly string[] }) {
+export function ShareButton({ ctx, images, bar }: { ctx: DaemonCtx; images?: readonly string[]; bar?: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <>
+      {bar ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="sticker squish flex w-full items-center justify-between gap-3 !rounded-2xl px-5 py-4 text-left"
+          style={{ background: "var(--butter)" }}
+        >
+          <span>
+            <span className="block font-display text-xl leading-none sm:text-2xl">Show it off</span>
+            <span className="mt-1 block text-xs font-bold opacity-80 sm:text-sm">Get a card of this Daemon and post it on X</span>
+          </span>
+          <svg viewBox="0 0 24 24" className="h-7 w-7 shrink-0" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" />
+          </svg>
+        </button>
+      ) : (
       <button
         type="button"
         onClick={() => setOpen(true)}
@@ -61,6 +77,7 @@ export function ShareButton({ ctx, images }: { ctx: DaemonCtx; images?: readonly
         </svg>
         Share
       </button>
+      )}
       <StickerDialog open={open} onClose={() => setOpen(false)} title="Show it off" wide>
         {open && <ShareCard ctx={ctx} images={images} />}
       </StickerDialog>

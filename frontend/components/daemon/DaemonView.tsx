@@ -242,6 +242,8 @@ export function DaemonScreen({
               </div>
             </div>
 
+            {ctx && awake && <ShareButton ctx={ctx} images={chog.images} bar />}
+
             {daemon.address && (
               <details className="text-sm">
                 <summary className="cursor-pointer font-semibold text-dim hover:text-fg">Daemon wallet details</summary>
