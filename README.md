@@ -86,7 +86,7 @@ npm run dev
 
 Network: Monad Testnet (Chain ID 10143). Faucet: https://faucet.monad.xyz
 
-## 1-Minute Judge Evaluation Flow
+## Quick tour
 
 1. Sign in (Privy email/social, or connect a wallet) → Monad Testnet
 2. Mint Test Chog (or use existing)
@@ -111,7 +111,7 @@ Network: Monad Testnet (Chain ID 10143). Faucet: https://faucet.monad.xyz
 - **$CHOG is the better way to hype**: a $CHOG hype adds +0.10x for 4h (MON: +0.05x for 3h) and 10% of it is burned
 - **Lucky hype**: a MON hype plus a Pyth Entropy roll. The hype applies at once; when the number arrives, a critical roll (1 in 5) maxes the boost and extends it. The boost is still paid only from the jar
 - **Marketplace metadata**: `tokenURI` is on-chain JSON with the real Chog Genesis image, the real traits (all 1,969 packed on-chain and verified) and the live state of the Daemon. `livingURI` is the fully drawn mood image
-- **Needs-you badges** on den cards, **Post on X** on the share card, and a **testing guide** at `/guide`
+- **Needs-you badges** on den cards, **Post on X** on the share card, and a **quick start** page at `/start`
 
 - ERC-6551 token-bound account per Chog (canonical registry)
 - Pluggable yield adapters behind a strategy registry

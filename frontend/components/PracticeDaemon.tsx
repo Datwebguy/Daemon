@@ -25,7 +25,7 @@ export function PracticeDaemon() {
   return (
     <div>
       <PageHero tone="--mint" kicker="No sign-in" title="Practice mode" face={{ mood: 0, seed: 7 }}>
-        A pretend Daemon with pretend money. Same rules as the real one. Time only moves when you fast-forward.
+        Same rules as a real Daemon, with practice money. Time moves when you fast-forward.
       </PageHero>
 
       <section className="mx-auto grid max-w-6xl gap-4 px-4 py-5 sm:gap-8 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:px-10">
@@ -116,7 +116,7 @@ export function PracticeDaemon() {
 
           <div className="stk !rounded-2xl p-4 sm:p-5">
             <h2 className="font-display text-lg sm:text-2xl">Ready for the real thing?</h2>
-            <p className="mt-1 text-xs text-dim sm:text-sm">Real Chogs, a real wallet and friends who can hype yours. It&apos;s free on the test network.</p>
+            <p className="mt-1 text-xs text-dim sm:text-sm">Real Chogs and a real wallet. Free on the test network.</p>
             <Link href="/app" className="stk squish mt-3 inline-flex h-10 items-center !rounded-full bg-jelly px-5 text-sm font-bold text-white">
               Open my den
             </Link>

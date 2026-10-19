@@ -159,7 +159,7 @@ export function DayInLife() {
             <Link href="/app" className="sticker sticker-pop squish !bg-butter px-5 py-2.5 text-sm font-bold sm:px-7 sm:py-3.5 sm:text-base">
               Do this for real
             </Link>
-            <p className="text-xs text-white/60 sm:text-sm">The sample uses pretend numbers.</p>
+            <p className="text-xs text-white/60 sm:text-sm">Sample numbers.</p>
           </div>
         </div>
       </div>

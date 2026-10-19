@@ -18,8 +18,8 @@ const EXAMPLES: { id: number; mood?: number; saved?: string; boosted?: boolean }
 
 const STEPS = [
   { title: "Sign in", body: "Email, Google, X or any wallet." },
-  { title: "Mint a free Chog", body: "Real Chog Genesis art, on the test network." },
-  { title: "Wake its Daemon", body: "It gets its own wallet and starts earning." },
+  { title: "Mint a free Chog", body: "With real Chog art." },
+  { title: "Wake its Daemon", body: "Its own wallet, earning for you." },
 ];
 
 /**
@@ -44,10 +44,7 @@ export function SignedOutDen() {
             {open ? (
               <>
                 <h2 className="font-display text-2xl leading-tight sm:text-4xl">Sign in to open your den</h2>
-                <p className="mt-2 text-sm text-dim sm:mt-3 sm:text-base">
-                  Your Chogs show up here, each with its Daemon&apos;s mood and savings. New here? It takes a few seconds, and your first Chog
-                  is free.
-                </p>
+                <p className="mt-2 text-sm text-dim sm:mt-3 sm:text-base">Your Chogs, their moods and their savings. Your first Chog is free.</p>
                 <div className="mt-5 flex flex-wrap items-center gap-2.5">
                   <Button onClick={auth.login} disabled={!auth.ready} className={cx("h-11", STICKER_BTN)}>
                     Sign in
@@ -60,9 +57,9 @@ export function SignedOutDen() {
                   </Link>
                 </div>
                 <p className="mt-3 text-xs text-dim">
-                  Test network only. Nothing here costs real money. Judging?{" "}
-                  <Link href="/guide" className="font-bold text-jelly underline-offset-4 hover:underline">
-                    Testing guide
+                  Test network, no real money.{" "}
+                  <Link href="/start" className="font-bold text-jelly underline-offset-4 hover:underline">
+                    Get started
                   </Link>
                 </p>
               </>
@@ -72,9 +69,7 @@ export function SignedOutDen() {
                   Opening soon
                 </span>
                 <h2 className="mt-3 font-display text-2xl leading-tight sm:text-4xl">Your den opens soon</h2>
-                <p className="mt-2 text-sm text-dim sm:mt-3 sm:text-base">
-                  Daemon is still being set up on the test network. Once it&apos;s live you&apos;ll sign in here and get a free Chog in one tap.
-                </p>
+                <p className="mt-2 text-sm text-dim sm:mt-3 sm:text-base">We&apos;re finishing setup. Sign-in and your free Chog arrive here shortly.</p>
                 <div className="mt-5 flex flex-wrap items-center gap-2.5">
                   <Link href="/practice" className={cx("inline-flex h-11 items-center rounded-full bg-jelly px-5 text-sm font-bold text-white", STICKER_BTN)}>
                     Try practice mode
@@ -122,7 +117,7 @@ export function SignedOutDen() {
               ))}
             </div>
             <p className="mt-4 text-xs text-dim sm:text-sm">
-              The colour tab is the Daemon&apos;s mood. Tap a card to harvest it, hype it or put its savings to work.
+              The colour tab is the Daemon&apos;s mood.
             </p>
           </figure>
         </div>
