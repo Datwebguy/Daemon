@@ -19,3 +19,6 @@ contracts/broadcast/*/*/dry-run/
 research_notes/
 reports/
 script/.chog-metadata/
+
+# demo video work (large, local only)
+video/
