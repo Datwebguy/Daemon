@@ -10,6 +10,7 @@ const COLS: { title: string; links: FooterLink[] }[] = [
     title: "Use Daemon",
     links: [
       { href: "/app", label: "Open the app" },
+      { href: "/practice", label: "Practice mode" },
       { href: "/explore", label: "Find a Daemon" },
       { href: "/feed", label: "Live activity" },
     ],

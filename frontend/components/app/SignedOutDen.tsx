@@ -53,10 +53,10 @@ export function SignedOutDen() {
                     Sign in
                   </Button>
                   <Link
-                    href="/explore"
+                    href="/practice"
                     className="stk squish inline-flex h-11 items-center !rounded-full px-5 text-sm font-bold transition-transform hover:-translate-y-0.5"
                   >
-                    Look around first
+                    Try practice mode
                   </Link>
                 </div>
                 <p className="mt-3 text-xs text-dim">Test network only. Nothing here costs real money.</p>
@@ -71,8 +71,8 @@ export function SignedOutDen() {
                   Daemon is still being set up on the test network. Once it&apos;s live you&apos;ll sign in here and get a free Chog in one tap.
                 </p>
                 <div className="mt-5 flex flex-wrap items-center gap-2.5">
-                  <Link href="/#day" className={cx("inline-flex h-11 items-center rounded-full bg-jelly px-5 text-sm font-bold text-white", STICKER_BTN)}>
-                    See a sample day
+                  <Link href="/practice" className={cx("inline-flex h-11 items-center rounded-full bg-jelly px-5 text-sm font-bold text-white", STICKER_BTN)}>
+                    Try practice mode
                   </Link>
                   <Link
                     href="/#how"
