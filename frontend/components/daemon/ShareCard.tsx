@@ -1,15 +1,9 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { toPng } from "html-to-image";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { getAbiItem, type Address } from "viem";
-import { usePublicClient } from "wagmi";
-import { daemonAccountAbi } from "@/lib/abis";
-import { CHAIN_ID, LOG_BLOCK_RANGE } from "@/lib/config";
 import { fmtUnits } from "@/lib/format";
-import { gql, indexerConfigured, LAST_UPDATE_QUERY, type DaemonUpdateRow } from "@/lib/indexer";
 import { moodOf } from "@/lib/mood";
 import { ChogFace } from "@/components/ChogFace";
 import { ChogImage } from "@/components/ChogImage";
@@ -17,35 +11,6 @@ import { StickerButton } from "./bits";
 import { StickerDialog } from "./StickerDialog";
 import type { DaemonCtx } from "./types";
 
-/** Last harvest amount: from the activity index if available, else recent history. */
-function useLastYield(account: Address, tokenId: bigint, enabled: boolean) {
-  const client = usePublicClient({ chainId: CHAIN_ID });
-  return useQuery({
-    queryKey: ["last-yield", account, tokenId.toString()],
-    enabled: enabled && Boolean(client),
-    staleTime: 30_000,
-    queryFn: async (): Promise<bigint | null> => {
-      if (indexerConfigured) {
-        try {
-          const d = await gql<{ DaemonUpdate: DaemonUpdateRow[] }>(LAST_UPDATE_QUERY, { tokenId: tokenId.toString() });
-          const row = d.DaemonUpdate[0];
-          if (row) return BigInt(row.yieldAmount);
-        } catch {
-          /* fall back to recent history */
-        }
-      }
-      if (!client) return null;
-      const latest = await client.getBlockNumber();
-      const logs = await client.getLogs({
-        address: account,
-        event: getAbiItem({ abi: daemonAccountAbi, name: "DaemonUpdate" }),
-        fromBlock: latest > LOG_BLOCK_RANGE ? latest - LOG_BLOCK_RANGE : BigInt(0),
-        toBlock: latest,
-      });
-      return logs[logs.length - 1]?.args.yieldAmount ?? null;
-    },
-  });
-}
 
 export function ShareButton({ ctx, images, bar }: { ctx: DaemonCtx; images?: readonly string[]; bar?: boolean }) {
   const [open, setOpen] = useState(false);
@@ -109,18 +74,15 @@ function xPostUrl(tokenId: bigint, mood: string | undefined, yieldLine: string):
 }
 
 function ShareCard({ ctx, images }: { ctx: DaemonCtx; images?: readonly string[] }) {
-  const { tokenId, account, deployed, state, protocol } = ctx;
+  const { tokenId, state, protocol } = ctx;
   const ref = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
-  const lastYield = useLastYield(account, tokenId, deployed);
   const m = moodOf(state.mood);
   const hex = m?.hex ?? "#8b5cf6";
   const dec = protocol.asset?.decimals ?? 18;
   const sym = protocol.asset?.symbol ?? "";
-  const yieldLine =
-    lastYield.data !== undefined && lastYield.data !== null
-      ? `+${fmtUnits(lastYield.data, dec)} ${sym} last harvest`
-      : `+${fmtUnits(state.lifetimeYield, dec)} ${sym} earned so far`;
+  // the same live total the Daemon page shows under "Earned so far"
+  const yieldLine = `+${fmtUnits(state.lifetimeYield, dec)} ${sym} earned so far`;
 
   const download = async () => {
     if (!ref.current) return;
