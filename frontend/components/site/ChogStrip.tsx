@@ -4,14 +4,15 @@ import { useState } from "react";
 import { artSources } from "@/lib/chogFaces";
 
 /** A few real Chog Genesis artworks (public collection on Monad), loaded lazily from IPFS gateways. */
-const IDS = [1468, 1492, 1525, 1581, 1676, 1794, 1941, 104, 269, 393, 534, 692, 829, 992, 1158, 1292];
+/** Thumbnails of these are stored with the site (public/chogs/s) so the strip is never blank. */
+const IDS = [1492, 1525, 1581, 1676, 1794, 1941, 104, 393, 534, 692, 829, 992, 1158, 1292];
 const TILTS = [-3, 2, -1.5, 3, -2.5, 1.5, -3.5, 2.5];
 const BACKS = ["#ffe6f1", "#fff3c4", "#dff4ff", "#e9e2ff", "#dcf7ec", "#ffe9dc"];
 
 function Tile({ id, i }: { id: number; i: number }) {
   const [gw, setGw] = useState(0);
   const [ready, setReady] = useState(false);
-  const sources = artSources(id, 384);
+  const sources = [`/chogs/s/${id}.webp`, ...artSources(id, 384)];
   const failed = gw >= sources.length;
   return (
     <div
@@ -27,6 +28,10 @@ function Tile({ id, i }: { id: number; i: number }) {
             alt={`Chog Genesis artwork number ${id}`}
             loading="lazy"
             decoding="async"
+            ref={(el) => {
+          // The picture may already be loaded before React attached onLoad (cached or fast): catch that case.
+          if (el && el.complete && el.naturalWidth > 0) setReady(true);
+        }}
             onLoad={() => setReady(true)}
             onError={() => setGw((g) => g + 1)}
             className={`h-full w-full object-cover transition-opacity duration-500 ${ready ? "opacity-100" : "opacity-0"}`}

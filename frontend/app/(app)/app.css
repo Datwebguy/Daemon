@@ -1,0 +1,162 @@
+/* ------------------------------------------------------------------ */
+/* App shell + secondary pages: edge-attached "sticker" furniture       */
+/* Tokens come from globals.css. Component-layer so utilities can win.  */
+/* ------------------------------------------------------------------ */
+
+@layer components {
+  /* A sticker you can recolour with plain utilities (bg-*, text-*, rounded-*). */
+  .stk {
+    background: var(--st-bg);
+    color: var(--st-fg);
+    border: 3px solid var(--st-line);
+    box-shadow: 4px 4px 0 var(--st-shadow);
+    border-radius: 1.1rem;
+  }
+
+  /* Page banner: a tint of the page colour with diagonal tape. */
+  .hero {
+    --mix: 38%;
+    background: color-mix(in oklab, var(--tone, var(--butter)) var(--mix), var(--bg));
+    border-bottom: 3px solid var(--st-line);
+  }
+  .dark .hero {
+    --mix: 24%;
+  }
+
+  /* Title slab in the top bar: a diagonal edge that still carries the ink outline. */
+  .title-slab {
+    filter: drop-shadow(3px 0 0 var(--st-line));
+  }
+
+  /* Warning tape under the top bar. */
+  .tape-strip {
+    background:
+      repeating-linear-gradient(135deg, rgb(30 18 56 / 0.16) 0 12px, transparent 12px 24px),
+      var(--butter);
+    border-bottom: 3px solid var(--st-line);
+    color: #1e1238;
+  }
+  .ticker-track {
+    display: flex;
+    width: max-content;
+    animation: marquee 44s linear infinite;
+  }
+  .tape-strip:hover .ticker-track {
+    animation-play-state: paused;
+  }
+
+  /* Quest tape: dashed connector between two stones, fills when its stone is done. */
+  .seg {
+    position: absolute;
+    pointer-events: none;
+    left: 1.75rem;
+    top: 1.75rem;
+    width: 6px;
+    height: 100%;
+    margin-left: -3px;
+  }
+  .seg::before,
+  .seg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+  .seg::before {
+    background: repeating-linear-gradient(180deg, color-mix(in oklab, var(--fg) 26%, transparent) 0 9px, transparent 9px 17px);
+  }
+  .seg::after {
+    background: repeating-linear-gradient(180deg, var(--mint) 0 9px, transparent 9px 17px);
+    transform: scaleY(var(--fill, 0));
+    transform-origin: top;
+    transition: transform 0.9s 0.1s cubic-bezier(0.3, 0.9, 0.3, 1);
+  }
+  @media (min-width: 48rem) {
+    .seg {
+      left: 50%;
+      top: 1.75rem;
+      width: 100%;
+      height: 6px;
+      margin-left: 0;
+      margin-top: -3px;
+    }
+    .seg::before {
+      background: repeating-linear-gradient(90deg, color-mix(in oklab, var(--fg) 26%, transparent) 0 9px, transparent 9px 17px);
+    }
+    .seg::after {
+      background: repeating-linear-gradient(90deg, var(--mint) 0 9px, transparent 9px 17px);
+      transform: scaleX(var(--fill, 0));
+      transform-origin: left;
+    }
+  }
+}
+
+@keyframes app-hop {
+  0%,
+  72%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  80% {
+    transform: translateY(-9px) rotate(2deg) scale(1.04, 0.97);
+  }
+  88% {
+    transform: translateY(0) rotate(-2deg) scale(1.05, 0.93);
+  }
+  94% {
+    transform: translateY(-3px) rotate(-1deg);
+  }
+}
+.bouncy {
+  animation: app-hop 3s ease-in-out infinite;
+}
+.bouncy:hover {
+  animation-play-state: paused;
+  transform: translateY(-3px) rotate(2deg) scale(1.05);
+}
+
+@keyframes app-wiggle {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(4deg) scale(1.05);
+  }
+}
+.wiggle {
+  animation: app-wiggle 1.8s ease-in-out infinite;
+}
+
+@keyframes app-live {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--pink) 70%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+}
+.live-dot {
+  animation: app-live 1.8s ease-out infinite;
+}
+
+/* Two-tone split panel: diagonal seam on wide screens, zigzag seam when stacked. */
+@media (min-width: 48rem) {
+  .split-a {
+    clip-path: polygon(0 0, 100% 0, calc(100% - 3.2rem) 100%, 0 100%);
+  }
+}
+@media (max-width: 47.99rem) {
+  .split-b {
+    --z: 14px;
+    clip-path: polygon(0 var(--z), 7% 0, 14% var(--z), 21% 0, 28% var(--z), 35% 0, 42% var(--z), 49% 0, 56% var(--z), 63% 0, 70% var(--z), 77% 0, 84% var(--z), 91% 0, 100% var(--z), 100% 100%, 0 100%);
+  }
+}
+
+/* Colour block that always keeps dark ink, in both themes (unlayered so it beats text-fg). */
+.ink-on,
+.ink-on .font-display,
+.ink-on a,
+.ink-on a span {
+  color: #1e1238;
+}

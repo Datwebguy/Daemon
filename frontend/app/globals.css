@@ -6,6 +6,11 @@
 /* Tokens: "clay & jelly" — lilac day, violet night                    */
 /* ------------------------------------------------------------------ */
 :root {
+  /* sticker: the signature panel. light = ink outline on white; dark = bone outline with a pink offset */
+  --st-bg: #ffffff;
+  --st-fg: #1e1238;
+  --st-line: #1e1238;
+  --st-shadow: #1e1238;
   --bg: #fffdf8;
   --surface: #ffffff;
   --surface-2: #f4effd;
@@ -25,20 +30,28 @@
   --clay-lo: rgb(81 52 201 / 0.14);
 }
 .dark {
-  --bg: #110b1f;
-  --surface: #1b1330;
-  --surface-2: #261a42;
-  --line: rgb(255 255 255 / 0.1);
-  --fg: #f4eeff;
-  --dim: #a99bc9;
-  --jelly: #8f72ff;
-  --jelly-deep: #6a4cf0;
-  --jelly-soft: #3a2b66;
+  --st-bg: #1a1730;
+  --st-fg: #fbf6ee;
+  --st-line: #fbf6ee;
+  --st-shadow: #ff86bd;
+  /* Arcade night: warm ink black, lit by pink, butter and sky. Colours keep one job each. */
+  --bg: #0d0b14;
+  --surface: #171424;
+  --surface-2: #221e35;
+  --line: rgb(255 255 255 / 0.12);
+  --fg: #fbf6ee;
+  --dim: #aba4c6;
+  --jelly: #a48cff;
+  --jelly-deep: #7a5af0;
+  --jelly-soft: #3b3069;
   --spark: #ff8a5b;
-  --mint: #3fdcaa;
-  --glow: rgb(143 114 255 / 0.4);
-  --clay-hi: rgb(255 255 255 / 0.08);
-  --clay-lo: rgb(0 0 0 / 0.45);
+  --mint: #4be3b0;
+  --pink: #ff86bd;
+  --butter: #ffd84d;
+  --sky: #6fd0ff;
+  --glow: rgb(164 140 255 / 0.35);
+  --clay-hi: rgb(255 255 255 / 0.07);
+  --clay-lo: rgb(0 0 0 / 0.5);
 }
 
 @theme inline {
@@ -95,10 +108,10 @@ body {
 }
 .dark .mesh {
   background:
-    radial-gradient(38rem 28rem at 8% 6%, rgb(255 126 182 / 0.16), transparent 62%),
-    radial-gradient(34rem 26rem at 92% 12%, rgb(255 216 77 / 0.1), transparent 62%),
-    radial-gradient(40rem 30rem at 78% 78%, rgb(143 114 255 / 0.22), transparent 62%),
-    radial-gradient(30rem 24rem at 14% 82%, rgb(92 198 255 / 0.12), transparent 62%),
+    radial-gradient(40rem 30rem at 6% 4%, rgb(255 134 189 / 0.2), transparent 60%),
+    radial-gradient(36rem 28rem at 94% 10%, rgb(255 216 77 / 0.13), transparent 60%),
+    radial-gradient(44rem 32rem at 80% 82%, rgb(111 208 255 / 0.14), transparent 60%),
+    radial-gradient(34rem 26rem at 10% 86%, rgb(164 140 255 / 0.2), transparent 60%),
     var(--bg);
 }
 .dots {
@@ -106,18 +119,29 @@ body {
   background-size: 22px 22px;
 }
 .sticker {
-  background: white;
-  color: #1e1238;
-  border: 3px solid #1e1238;
-  box-shadow: 4px 4px 0 #1e1238;
+  background: var(--st-bg);
+  color: var(--st-fg);
+  border: 3px solid var(--st-line);
+  box-shadow: 4px 4px 0 var(--st-shadow);
   border-radius: 1.1rem;
+}
+/* coloured stickers keep dark ink in both themes */
+.sticker[class*="!bg-"],
+.sticker[style*="background"] {
+  color: #1e1238;
+  --st-line: #1e1238;
+}
+.dark .sticker[class*="!bg-"],
+.dark .sticker[style*="background"] {
+  box-shadow: 4px 4px 0 var(--st-shadow);
+  border-color: #fbf6ee;
 }
 .sticker-pop {
   transition: transform 0.25s cubic-bezier(0.3, 1.6, 0.5, 1), box-shadow 0.25s;
 }
 .sticker-pop:hover {
   transform: translate(-2px, -3px) rotate(-1.5deg);
-  box-shadow: 7px 8px 0 #1e1238;
+  box-shadow: 7px 8px 0 var(--st-shadow);
 }
 .squish:active {
   transform: scale(0.94, 1.06);
@@ -416,4 +440,26 @@ input[type="range"].jelly-range::-moz-range-thumb {
   background: white;
   border: 4px solid var(--jelly);
   cursor: grab;
+}
+
+/* ------------------------------------------------------------------ */
+/* Edge-to-edge layout helpers (app)                                   */
+/* ------------------------------------------------------------------ */
+.ticket {
+  /* a panel with scooped side notches, like a ticket */
+  --n: 14px;
+  mask:
+    radial-gradient(circle var(--n) at 0 50%, #0000 98%, #000) left / 51% 100% no-repeat,
+    radial-gradient(circle var(--n) at 100% 50%, #0000 98%, #000) right / 51% 100% no-repeat;
+}
+.zigzag-top {
+  --z: 14px;
+  clip-path: polygon(0 var(--z), 7% 0, 14% var(--z), 21% 0, 28% var(--z), 35% 0, 42% var(--z), 49% 0, 56% var(--z), 63% 0, 70% var(--z), 77% 0, 84% var(--z), 91% 0, 100% var(--z), 100% 100%, 0 100%);
+}
+.slash {
+  /* diagonal seam between two halves */
+  clip-path: polygon(0 0, 100% 0, calc(100% - 3.2rem) 100%, 0 100%);
+}
+.tape-bg {
+  background-image: repeating-linear-gradient(135deg, color-mix(in oklab, var(--fg) 8%, transparent) 0 10px, transparent 10px 20px);
 }

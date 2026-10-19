@@ -75,7 +75,7 @@ export function Story() {
         <div className="mt-16 grid gap-10 lg:grid-cols-[1fr_1fr] lg:gap-16">
           {/* sticky stage */}
           <div className="lg:sticky lg:top-28 lg:h-[30rem] lg:self-start">
-            <div className="clay relative grid h-80 place-items-center overflow-hidden rounded-[2.25rem] sm:h-96 lg:h-full">
+            <div className="sticker relative grid h-80 place-items-center overflow-hidden !rounded-[2rem] sm:h-96 lg:h-full">
               <div aria-hidden className="absolute inset-0 transition-colors duration-700" style={{ background: `radial-gradient(55% 55% at 50% 55%, ${hue}40, transparent 75%)` }} />
               <div key={active} className="absolute top-6 left-1/2 w-[80%] -translate-x-1/2 text-center animate-pop">
                 <span className="glass inline-block rounded-2xl px-4 py-2.5 font-display text-base font-semibold">“{s.say}”</span>
@@ -98,7 +98,7 @@ export function Story() {
                 ref={(el) => {
                   refs.current[i] = el;
                 }}
-                className={cx("rounded-[1.75rem] p-6 transition-all duration-500 sm:p-7", i === active ? "clay" : "opacity-80")}
+                className={cx("rounded-[1.75rem] p-6 transition-all duration-500 sm:p-7", i === active ? "sticker" : "opacity-80")}
               >
                 <div className="flex items-baseline gap-4">
                   <span className={cx("font-display text-4xl font-extrabold tabular-nums transition-colors", i === active ? "text-jelly" : "text-dim/50")}>

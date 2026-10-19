@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Logo } from "../brand/Logo";
+import { ThemeToggle } from "../ThemeToggle";
 import { cx } from "../ui";
 
 const LINKS = [
@@ -41,9 +42,10 @@ export function SiteNav() {
             </li>
           ))}
         </ul>
+        <ThemeToggle compact className="ml-1" />
         <Link
           href="/app"
-          className="ml-1 inline-flex items-center gap-2 rounded-full bg-fg px-5 py-2.5 text-sm font-semibold text-bg transition hover:scale-[1.03] active:scale-[0.98]"
+          className="ml-1 hidden items-center gap-2 rounded-full bg-fg px-5 py-2.5 sm:inline-flex text-sm font-semibold text-bg transition hover:scale-[1.03] active:scale-[0.98]"
         >
           Open the app
         </Link>

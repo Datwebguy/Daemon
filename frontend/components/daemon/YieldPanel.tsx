@@ -6,10 +6,12 @@ import { useReadContract } from "wagmi";
 import { simulateContract, writeContract } from "wagmi/actions";
 import { daemonAccountAbi, erc20Abi, strategyRegistryAbi } from "@/lib/abis";
 import { CHAIN_ID, contracts } from "@/lib/config";
+import { cx } from "@/lib/cx";
 import { fmtUnits, fractionDigits, safeParseUnits } from "@/lib/format";
 import { useBalances, usePositions, type Position } from "@/lib/hooks";
 import { useTx } from "@/lib/tx";
-import { Button, cx, Input, Loading, Notice } from "../ui";
+import { Loading } from "../ui";
+import { Note, StickerButton, type Tone } from "./bits";
 import type { DaemonCtx } from "./types";
 
 /** Most vaults one Daemon can use at once (contract limit). */
@@ -17,14 +19,21 @@ const MAX_SOURCES = 8;
 const DEPOSIT = "Put money to work";
 const MOVE = "Send to your Daemon";
 
-function vaultLook(label: string) {
+function vaultLook(label: string): { name: string; note: string; tone: Tone; path: string } {
   const l = label.toLowerCase();
-  if (l.includes("degen")) return { name: "Degen vault", note: "Bigger swings, more fun", tone: "#ff7a45", path: "M6 26 L12 12 L18 22 L25 6 L31 18 L38 8" };
-  if (l.includes("stable")) return { name: "Stable vault", note: "Calm, steady rewards", tone: "#12a57a", path: "M6 24 C12 16 18 20 24 14 S34 8 38 8" };
-  return { name: `${label} vault`, note: "Earns rewards over time", tone: "#7a5af0", path: "M6 20 H38" };
+  if (l.includes("degen")) return { name: "Degen vault", note: "Bigger swings, more fun", tone: "spark", path: "M4 40 L22 14 L38 34 L56 8 L72 32 L90 12 L116 26" };
+  if (l.includes("stable")) return { name: "Stable vault", note: "Calm, steady rewards", tone: "mint", path: "M4 34 C22 30 34 38 52 26 S88 14 116 12" };
+  return { name: `${label} vault`, note: "Earns rewards over time", tone: "sky", path: "M4 26 H116" };
 }
 
-/** Savings: the owner's vault positions, with deposit (send → put to work) and withdraw. */
+/** Trim a decimal string to at most `max` fraction digits (never rounds up). */
+function trimFraction(s: string, max: number): string {
+  const [i = "0", f = ""] = s.split(".");
+  const frac = f.slice(0, max).replace(/0+$/, "");
+  return frac ? `${i}.${frac}` : i;
+}
+
+/** Savings: the owner's vault positions, with deposit (send then put to work) and withdraw. */
 export function YieldPanel({ ctx }: { ctx: DaemonCtx }) {
   const { account, deployed, user, isOwner, protocol, state } = ctx;
   const asset = protocol.asset;
@@ -127,17 +136,30 @@ export function YieldPanel({ ctx }: { ctx: DaemonCtx }) {
 
   const busy = pending === DEPOSIT || pending === MOVE;
 
+  // Slider: 0 to 1000 thousandths of everything you could put in (money already in the Daemon plus your wallet).
+  const maxAmt = idle + (userBal.asset ?? BigInt(0));
+  const frac = parsed !== undefined && maxAmt > BigInt(0) ? Math.max(0, Math.min(1000, Number((parsed * BigInt(1000)) / maxAmt))) : 0;
+  const slide = (v: number) => {
+    if (maxAmt === BigInt(0) || v <= 0) return setAmount("");
+    if (v >= 1000) return setAmount(formatUnits(maxAmt, dec));
+    setAmount(trimFraction(formatUnits((maxAmt * BigInt(v)) / BigInt(1000), dec), Math.min(dec, 6)));
+  };
+
   if (!deployed) return <p className="text-sm text-dim">Wake this Daemon up first, then you can start saving.</p>;
   if (protocol.sources.length === 0 && protocol.unlistedSources.length === 0)
-    return <Notice title="Vaults are opening soon">There&apos;s nowhere to put money to work just yet. Check back shortly.</Notice>;
+    return (
+      <Note title="Vaults are opening soon">There&apos;s nowhere to put money to work just yet. Check back shortly.</Note>
+    );
   if (isLoading) return <Loading label="Checking your savings…" />;
-  if (error) return <Notice tone="error" title="We couldn't load your savings">The network didn&apos;t answer. It usually comes back in a moment.</Notice>;
+  if (error) return <Note tone="error" title="We couldn't load your savings">The network didn&apos;t answer. It usually comes back in a moment.</Note>;
+
+  const selTone = selectedPos ? vaultLook(selectedPos.label).tone : "sky";
 
   return (
     <div className="space-y-5">
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-2 items-start gap-3 sm:gap-4">
         {positions.map((p) => (
-          <VaultCard
+          <Cartridge
             key={p.source}
             p={p}
             ctx={ctx}
@@ -156,43 +178,77 @@ export function YieldPanel({ ctx }: { ctx: DaemonCtx }) {
       )}
 
       {stuck && isOwner && (
-        <Notice tone="warn" title="Your money arrived, but isn't working yet">
+        <Note tone="warn" title="Your money arrived, but isn't working yet">
           {fmtUnits(stuck.amount, dec)} {sym} reached your Daemon, but putting it into the vault didn&apos;t go through. Nothing is lost.
           <div className="mt-3">
-            <Button size="sm" onClick={retry} loading={pending === DEPOSIT}>
+            <StickerButton size="md" tone="butter" onClick={retry} loading={pending === DEPOSIT}>
               Try again
-            </Button>
+            </StickerButton>
           </div>
-        </Notice>
+        </Note>
       )}
 
       {isOwner && asset && (
-        <div className="clay-sunk rounded-[1.5rem] p-4 sm:p-5">
-          <div className="flex items-baseline justify-between gap-3">
-            <div className="font-display text-lg font-bold">Add to {selectedPos ? vaultLook(selectedPos.label).name : "a vault"}</div>
-            <div className="text-xs text-dim tabular-nums">
+        <div className={cx("rounded-2xl border-[3px] border-[var(--st-line)] bg-[var(--st-bg)] p-4 shadow-[4px_4px_0_var(--st-shadow)] sm:p-5", `dm-t-${selTone}`)}>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+            <div className="font-display text-xl leading-tight">Add to {selectedPos ? vaultLook(selectedPos.label).name : "a vault"}</div>
+            <div className="text-xs font-bold tabular-nums text-dim">
               Wallet: {fmtUnits(userBal.asset, dec)} {sym}
             </div>
           </div>
-          <div className="mt-3 flex gap-2">
-            <Input inputMode="decimal" placeholder={`Amount in ${sym}`} value={amount} onChange={(e) => setAmount(e.target.value)} aria-label="Amount to save" />
-            <Button variant="ghost" className="shrink-0" onClick={() => setAmount(formatUnits(idle + (userBal.asset ?? BigInt(0)), dec))}>
-              Max
-            </Button>
+
+          {/* the deposit rail */}
+          <div className="mt-4">
+            <input
+              type="range"
+              min={0}
+              max={1000}
+              step={1}
+              value={frac}
+              disabled={maxAmt === BigInt(0)}
+              onChange={(e) => slide(Number(e.target.value))}
+              aria-label="How much to save"
+              className="dm-rail"
+              style={{ "--p": `${frac / 10}%` } as React.CSSProperties}
+            />
+            <div className="dm-ticks" aria-hidden>
+              <i />
+              <i />
+              <i />
+              <i />
+              <i />
+            </div>
           </div>
-          <Button
-            className="mt-3 w-full"
-            size="lg"
+
+          <div className="mt-3 flex gap-2">
+            <input
+              className="dm-input"
+              inputMode="decimal"
+              placeholder={`Amount in ${sym}`}
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              aria-label="Amount to save"
+            />
+            <StickerButton size="md" tone="butter" className="shrink-0" onClick={() => setAmount(formatUnits(maxAmt, dec))} disabled={maxAmt === BigInt(0)}>
+              Max
+            </StickerButton>
+          </div>
+
+          <StickerButton
+            tone="jelly"
+            size="xl"
+            className="mt-4"
             onClick={deposit}
             loading={busy}
             disabled={parsed === undefined || parsed === BigInt(0) || !walletOk || blocked !== null}
           >
             Put it to work
-          </Button>
-          <div className="mt-2 space-y-1 text-xs">
-            {blocked && parsed !== undefined && <p className="text-amber-700 dark:text-amber-300">{blocked}</p>}
-            {tooPrecise && <p className="text-rose-500">That&apos;s too many decimal places.</p>}
-            {!walletOk && <p className="text-rose-500">You don&apos;t have enough {sym}. Grab free test dollars from the menu.</p>}
+          </StickerButton>
+
+          <div className="mt-3 space-y-1 text-xs">
+            {blocked && parsed !== undefined && <p className="font-bold text-amber-700 dark:text-amber-300">{blocked}</p>}
+            {tooPrecise && <p className="font-bold text-rose-500">That&apos;s too many decimal places.</p>}
+            {!walletOk && <p className="font-bold text-rose-500">You don&apos;t have enough {sym}. Grab free test dollars from the menu.</p>}
             {walletOk && shortfall > BigInt(0) && (
               <p className="text-dim">This takes two quick approvals: one to send the money to your Daemon, one to put it to work.</p>
             )}
@@ -203,7 +259,8 @@ export function YieldPanel({ ctx }: { ctx: DaemonCtx }) {
   );
 }
 
-function VaultCard({
+/** A vault as a game cartridge: grip on top, a label window with its line, pins at the bottom. */
+function Cartridge({
   p,
   ctx,
   dec,
@@ -228,6 +285,7 @@ function VaultCard({
   const shares = max ? p.shares : parsed !== undefined && p.assets > BigInt(0) ? (parsed * p.shares) / p.assets : undefined;
   const tooMuch = shares !== undefined && shares > p.shares;
   const label = `Bring back from ${look.name}`;
+  const capPct = p.cap !== undefined && p.cap > BigInt(0) ? Math.max(0, Math.min(100, Number((p.assets * BigInt(100)) / p.cap))) : undefined;
 
   const withdraw = async () => {
     if (!user || shares === undefined || shares === BigInt(0)) return;
@@ -256,64 +314,77 @@ function VaultCard({
   const rewards =
     p.reward?.decimals === undefined ? "…" : `${fmtUnits(p.pendingRewards, p.reward.decimals, 2)} ${p.reward.symbol ?? ""}`.trim();
 
-  return (
-    <div
-      role={onSelect ? "button" : undefined}
-      tabIndex={onSelect ? 0 : undefined}
-      onClick={onSelect}
-      onKeyDown={(e) => onSelect && (e.key === "Enter" || e.key === " ") && onSelect()}
-      className={cx(
-        "rounded-[1.5rem] border-2 bg-surface p-4 transition",
-        selected ? "border-jelly shadow-[0_14px_30px_-18px_var(--glow)]" : "border-transparent",
-        onSelect && "cursor-pointer hover:border-jelly/40",
-        !p.approved && "opacity-70",
-      )}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <svg viewBox="0 0 44 32" className="h-7 w-9" fill="none" stroke={look.tone} strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d={look.path} />
-          </svg>
-          <div className="mt-1.5 font-display text-lg font-bold">{look.name}</div>
-          <div className="text-xs text-dim">{p.approved ? look.note : "Closed to new deposits"}</div>
+  const face = (
+    <>
+      <div className="dm-cart-grip">
+        <span className="font-display text-[0.95rem] leading-none sm:text-base">{look.name}</span>
+        <span className="text-[9px] font-extrabold uppercase tracking-wider">{!p.approved ? "Closed" : selected ? "In the slot" : ""}</span>
+      </div>
+      <div className="dm-cart-window">
+        <svg viewBox="0 0 120 48" className="block h-12 w-full" fill="none" stroke="#1e1238" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d={look.path} />
+        </svg>
+      </div>
+      <div className="px-3 pb-3 pt-2.5">
+        <div className="text-[11px] font-bold leading-tight text-dim">{p.approved ? look.note : "Closed to new deposits"}</div>
+        <div className="mt-1.5 break-words font-display text-[clamp(1.25rem,5.4cqi,1.7rem)] leading-none tabular-nums">
+          {fmtUnits(p.assets, dec, 2)} <span className="text-[0.55em] text-dim">{sym}</span>
         </div>
-        {selected && <span className="rounded-full bg-jelly px-2.5 py-0.5 text-[11px] font-bold text-white">Selected</span>}
+        <div className="mt-1 text-[11px] font-bold tabular-nums text-[color:var(--c-mint)]">+ {rewards} growing</div>
+        {capPct !== undefined && (
+          <div className="mt-2.5">
+            <div className="h-2.5 overflow-hidden rounded-full border-2 border-[var(--st-line)] bg-[var(--surface-2)]" role="img" aria-label={`${capPct} percent of the cap used`}>
+              <div className="h-full" style={{ width: `${capPct}%`, background: "var(--tone)" }} />
+            </div>
+            <div className="mt-1 text-[10px] font-bold text-dim">Cap {fmtUnits(p.cap, dec, 0)} {sym}</div>
+          </div>
+        )}
       </div>
-      <div className="mt-4 font-display text-2xl font-extrabold tabular-nums">
-        {fmtUnits(p.assets, dec, 2)} <span className="text-base text-dim">{sym}</span>
-      </div>
-      <div className="text-xs text-dim tabular-nums">+ {rewards} growing</div>
+    </>
+  );
+
+  return (
+    <div className={cx("dm-cart", `dm-t-${look.tone}`, !p.approved && "opacity-70")} data-selected={selected}>
+      {onSelect ? (
+        <button type="button" aria-pressed={selected} onClick={onSelect} className="dm-cart-main">
+          {face}
+        </button>
+      ) : (
+        <div className="dm-cart-main">{face}</div>
+      )}
 
       {isOwner && p.shares > BigInt(0) && (
-        <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+        <div className="border-t-[3px] border-dashed border-[var(--sep)] px-3 py-2.5">
           {!open ? (
-            <button onClick={() => setOpen(true)} className="text-sm font-semibold text-jelly underline-offset-4 hover:underline">
+            <button type="button" onClick={() => setOpen(true)} className="text-xs font-extrabold text-jelly underline-offset-4 hover:underline dark:text-jelly">
               Bring some back
             </button>
           ) : (
             <div className="space-y-2">
-              <div className="flex gap-2">
-                <Input
+              <div className="flex gap-1.5">
+                <input
+                  className={cx("dm-input !px-2.5 !py-1.5 !text-sm", tooMuch && "!border-rose-500")}
                   inputMode="decimal"
                   placeholder="Amount"
+                  aria-label="Amount to bring back"
                   value={max ? formatUnits(p.assets, dec) : amount}
                   onChange={(e) => {
                     setMax(false);
                     setAmount(e.target.value);
                   }}
-                  className={cx("!py-2", tooMuch && "!border-rose-500")}
                 />
-                <Button size="sm" variant="ghost" onClick={() => setMax(true)}>
+                <button type="button" onClick={() => setMax(true)} className="shrink-0 rounded-lg border-[3px] border-[var(--st-line)] px-2 text-xs font-extrabold">
                   All
-                </Button>
+                </button>
               </div>
-              <Button size="sm" variant="secondary" className="w-full" onClick={withdraw} loading={pending === label} disabled={!shares || tooMuch}>
-                Bring back to Daemon
-              </Button>
+              <StickerButton size="md" tone="mint" className="w-full !px-2 !py-1.5 !text-sm" onClick={withdraw} loading={pending === label} disabled={!shares || tooMuch}>
+                Bring back
+              </StickerButton>
             </div>
           )}
         </div>
       )}
+      <div className="dm-cart-pins" aria-hidden />
     </div>
   );
 }

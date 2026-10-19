@@ -12,7 +12,9 @@ import { fmtUnits } from "@/lib/format";
 import { gql, indexerConfigured, LAST_UPDATE_QUERY, type DaemonUpdateRow } from "@/lib/indexer";
 import { moodOf } from "@/lib/mood";
 import { ChogFace } from "@/components/ChogFace";
-import { Button, Dialog } from "../ui";
+import { ChogImage } from "@/components/ChogImage";
+import { StickerButton } from "./bits";
+import { StickerDialog } from "./StickerDialog";
 import type { DaemonCtx } from "./types";
 
 /** Last harvest amount: from the activity index if available, else recent history. */
@@ -45,29 +47,37 @@ function useLastYield(account: Address, tokenId: bigint, enabled: boolean) {
   });
 }
 
-export function ShareButton({ ctx, image }: { ctx: DaemonCtx; image?: string }) {
+export function ShareButton({ ctx, images }: { ctx: DaemonCtx; images?: readonly string[] }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
-        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="sticker squish relative z-10 inline-flex rotate-3 items-center gap-1.5 !rounded-full px-3.5 py-2 text-sm font-extrabold !shadow-[3px_3px_0_var(--st-shadow)]"
+      >
+        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" />
         </svg>
         Share
-      </Button>
-      <Dialog open={open} onClose={() => setOpen(false)} title="Show it off" wide>
-        {open && <ShareCard ctx={ctx} image={image} />}
-      </Dialog>
+      </button>
+      <StickerDialog open={open} onClose={() => setOpen(false)} title="Show it off" wide>
+        {open && <ShareCard ctx={ctx} images={images} />}
+      </StickerDialog>
     </>
   );
 }
 
-function ShareCard({ ctx, image }: { ctx: DaemonCtx; image?: string }) {
+/** The saved picture always uses fixed colours, so it looks the same whatever theme you are in. */
+const INK = "#1e1238";
+
+function ShareCard({ ctx, images }: { ctx: DaemonCtx; images?: readonly string[] }) {
   const { tokenId, account, deployed, state, protocol } = ctx;
   const ref = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
   const lastYield = useLastYield(account, tokenId, deployed);
   const m = moodOf(state.mood);
+  const hex = m?.hex ?? "#8b5cf6";
   const dec = protocol.asset?.decimals ?? 18;
   const sym = protocol.asset?.symbol ?? "";
   const yieldLine =
@@ -91,38 +101,57 @@ function ShareCard({ ctx, image }: { ctx: DaemonCtx; image?: string }) {
     }
   };
 
+  const edge = { border: `4px solid ${INK}`, boxShadow: `5px 5px 0 ${INK}`, color: INK } as const;
+
   return (
     <div>
-      <div className="overflow-hidden rounded-[1.75rem]">
+      <div className="overflow-hidden rounded-2xl border-4 border-[var(--st-line)]">
         <div
           ref={ref}
-          className="relative flex aspect-[1.6] w-full flex-col justify-between overflow-hidden p-6 text-white sm:p-8"
-          style={{ background: `radial-gradient(90% 120% at 85% 20%, ${m?.hex ?? "#7a5af0"}, #5134c9 55%, #1e1238)` }}
+          className="relative p-3.5 sm:p-5"
+          style={{
+            background: `radial-gradient(60% 70% at 18% 12%, rgba(255,255,255,.5), transparent 70%), linear-gradient(150deg, color-mix(in oklab, ${hex} 62%, white), ${hex} 55%, color-mix(in oklab, ${hex} 75%, ${INK}))`,
+          }}
         >
-          <div className="absolute -right-4 -bottom-6 h-[78%] w-[52%]">
-            {image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={image} alt="" crossOrigin="anonymous" className="h-full w-full rounded-[1.5rem] object-cover shadow-2xl" />
-            ) : (
-              <ChogFace mood={state.mood} className="h-full w-full" />
-            )}
-          </div>
-          <div className="relative max-w-[55%]">
-            <div className="text-sm font-semibold text-white/75">Chog #{tokenId.toString()}</div>
-            <div className="mt-1 font-display text-4xl font-extrabold leading-none sm:text-5xl">
-              {m?.name ?? "Asleep"}
+          <div aria-hidden className="absolute inset-0" style={{ backgroundImage: `radial-gradient(rgba(30,18,56,.16) 1.4px, transparent 1.6px)`, backgroundSize: "20px 20px" }} />
+          <div className="relative flex aspect-[1.6] w-full gap-3 sm:gap-4">
+            <div className="flex min-w-0 flex-1 flex-col justify-between">
+              <div className="space-y-2">
+                <div className="inline-block -rotate-2 rounded-lg bg-white px-2.5 py-1 text-xs font-extrabold sm:text-sm" style={edge}>
+                  Chog #{tokenId.toString()}
+                </div>
+                <div className="block w-fit -rotate-1 rounded-xl px-3 py-1 font-display text-3xl leading-none sm:text-5xl" style={{ ...edge, background: "#ffd84d" }}>
+                  {m?.name ?? "Asleep"}
+                </div>
+                <div className="block w-fit max-w-full rotate-1 rounded-lg px-2.5 py-1 font-display text-sm leading-tight sm:text-lg" style={{ ...edge, background: "#4be3b0" }}>
+                  {yieldLine}
+                </div>
+              </div>
+              <div>
+                <div className="rounded-xl bg-white px-3 py-2 font-display text-sm leading-snug sm:text-lg" style={edge}>
+                  “{state.lastMessage || "gm. I'm a Daemon now."}”
+                </div>
+                <div className="mt-2 text-xs font-extrabold sm:text-sm" style={{ color: INK }}>
+                  daemon · on Monad
+                </div>
+              </div>
             </div>
-            <div className="mt-3 font-display text-lg font-bold tabular-nums">{yieldLine}</div>
-          </div>
-          <div className="relative max-w-[55%]">
-            <div className="font-display text-lg font-semibold leading-snug">“{state.lastMessage || "gm. I'm a Daemon now."}”</div>
-            <div className="mt-4 text-sm font-bold">daemon · on Monad</div>
+            <div className="flex w-[40%] shrink-0 items-center justify-center">
+              <div className="relative aspect-square w-full rotate-3 overflow-hidden rounded-2xl bg-white" style={{ ...edge, border: `5px solid ${INK}`, boxShadow: `8px 8px 0 ${INK}` }}>
+                <ChogImage
+                  srcs={images ?? []}
+                  alt={`Chog #${tokenId.toString()}`}
+                  eager
+                  fallback={<ChogFace mood={state.mood} className="h-full w-full" />}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      <Button className="mt-5 w-full" size="lg" onClick={download} loading={busy}>
+      <StickerButton tone="jelly" size="lg" className="mt-5 w-full" onClick={download} loading={busy}>
         Save image
-      </Button>
+      </StickerButton>
     </div>
   );
 }

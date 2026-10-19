@@ -5,14 +5,15 @@ import { fmtUnits } from "@/lib/format";
 import { useChog, useDaemonAddress, useDaemonSummary, useProtocol, useSlowNow } from "@/lib/hooks";
 import { moodOf } from "@/lib/mood";
 import { useInView } from "@/lib/useInView";
+import { inkOn } from "./app/color";
 import { ChogImage } from "./ChogImage";
 import { ChogFace } from "@/components/ChogFace";
 import { cx, Spinner } from "./ui";
 
-/** Lazy: renders a placeholder (and makes no network calls) until scrolled near the viewport. */
+/** Trading-card tile. Lazy: shows a blank card (and makes no network calls) until scrolled near the viewport. */
 export function ChogCard({ tokenId }: { tokenId: bigint }) {
   const [ref, seen] = useInView<HTMLDivElement>();
-  return <div ref={ref}>{seen ? <ChogCardBody tokenId={tokenId} /> : <div className="clay-sunk aspect-[4/5] rounded-[1.75rem]" />}</div>;
+  return <div ref={ref}>{seen ? <ChogCardBody tokenId={tokenId} /> : <div className="stk aspect-[3/4] animate-pulse !rounded-[1.25rem] !bg-surface-2 opacity-60" />}</div>;
 }
 
 function ChogCardBody({ tokenId }: { tokenId: bigint }) {
@@ -23,57 +24,75 @@ function ChogCardBody({ tokenId }: { tokenId: bigint }) {
   const m = moodOf(state.mood);
   const now = useSlowNow();
   const boosted = state.boostExpiresAt !== undefined ? Number(state.boostExpiresAt) > now : false;
+  // cards lean a little, alternating, so a grid feels hand-placed
+  const lean = Number(tokenId % BigInt(2)) === 0 ? "-rotate-[1.4deg]" : "rotate-[1.4deg]";
 
   if (chog.exists === false) {
     return (
-      <div className="clay-sunk grid aspect-[4/5] place-items-center rounded-[1.75rem] p-4 text-center text-sm text-dim">
+      <div className="stk grid aspect-[3/4] place-items-center !rounded-[1.25rem] border-dashed p-4 text-center text-sm text-dim">
         Chog #{tokenId.toString()} hasn&apos;t been minted yet.
       </div>
     );
   }
   const cardMood = daemon.deployed ? state.mood : undefined;
+  const tabColor = daemon.deployed && m ? m.hex : undefined;
+  const tabLabel = daemon.isLoading || chog.isLoading ? null : !daemon.deployed ? "Asleep" : (m?.name ?? null);
   return (
     <Link
       href={`/daemon/${tokenId.toString()}`}
-      className="clay group block overflow-hidden rounded-[1.75rem] p-2.5 transition duration-300 hover:-translate-y-1 hover:shadow-[0_26px_50px_-24px_var(--glow)]"
+      className={cx(
+        "group block rounded-[1.25rem] transition-[rotate,translate] duration-300 ease-[cubic-bezier(.3,1.5,.5,1)] hover:-translate-y-2 hover:rotate-0 focus-visible:-translate-y-2 focus-visible:rotate-0",
+        lean,
+      )}
     >
-      <div
-        className="relative aspect-square overflow-hidden rounded-[1.35rem]"
-        style={{ background: `radial-gradient(70% 70% at 50% 40%, ${m?.hex ?? "#b9a6fa"}55, var(--surface-2))` }}
-      >
-        <ChogImage
-          srcs={chog.images}
-          alt={chog.realName ?? `Chog #${tokenId.toString()}`}
-          className="group-hover:scale-105"
-          overlay={
-            <div
-              className="absolute bottom-2 left-2 h-12 w-12 overflow-hidden rounded-full border-2 border-white/70 shadow-md"
-              style={{ background: `radial-gradient(circle at 50% 40%, ${m?.hex ?? "#a8a3b8"}88, var(--surface))` }}
-            >
-              <ChogFace mood={cardMood} boosted={boosted} className="h-full w-full p-0.5" />
-            </div>
-          }
-          fallback={<ChogFace mood={cardMood} className="h-full w-full p-4" />}
-        />
-        {boosted && (
-          <span className="absolute left-2.5 top-2.5 rounded-full bg-spark px-2.5 py-1 text-[11px] font-bold text-white shadow">Boosted</span>
-        )}
-      </div>
-      <div className="px-2 pb-1.5 pt-3">
-        <div className="flex items-center justify-between gap-2">
-          <span className="font-display text-lg font-bold">#{tokenId.toString()}</span>
-          {daemon.isLoading || chog.isLoading ? (
-            <Spinner className="h-4 w-4 text-dim" />
-          ) : !daemon.deployed ? (
-            <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs font-semibold text-dim">Asleep</span>
-          ) : m ? (
-            <span className={cx("rounded-full px-2.5 py-0.5 text-xs font-semibold", m.bg, m.text)}>
-              {m.name}
-            </span>
-          ) : null}
+      <div className="stk overflow-hidden !rounded-[1.25rem] transition-shadow duration-300 group-hover:shadow-[8px_9px_0_var(--st-shadow)]">
+        {/* colour tab: the Daemon's mood */}
+        <div
+          className={cx("flex items-center justify-between gap-2 border-b-[3px] border-[color:var(--st-line)] px-3 py-1.5", !tabColor && "tape-bg bg-surface-2 text-fg")}
+          style={tabColor ? { background: tabColor, color: inkOn(tabColor) } : undefined}
+        >
+          <span className="font-display text-lg leading-none">#{tokenId.toString()}</span>
+          {tabLabel ? <span className="text-[11px] font-bold uppercase tracking-wider">{tabLabel}</span> : <Spinner className="h-4 w-4" />}
         </div>
-        <div className="mt-0.5 text-sm text-dim tabular-nums">
-          {daemon.deployed ? `${fmtUnits(state.totalAssets, asset?.decimals ?? 18, 2)} ${asset?.symbol ?? ""} saved` : "Tap to wake it up"}
+
+        <div className="p-2">
+          <div
+            className="relative aspect-square overflow-hidden rounded-xl border-[3px] border-[color:var(--st-line)]"
+            style={{ background: `radial-gradient(70% 70% at 50% 40%, ${m?.hex ?? "#b9a6fa"}55, var(--surface-2))` }}
+          >
+            <ChogImage
+              srcs={chog.images}
+              alt={chog.realName ?? `Chog #${tokenId.toString()}`}
+              className="group-hover:scale-105"
+              overlay={
+                <div
+                  className="absolute bottom-2 left-2 h-12 w-12 overflow-hidden rounded-full border-[3px] border-[#1e1238] shadow-[2px_2px_0_#1e1238]"
+                  style={{ background: `radial-gradient(circle at 50% 40%, ${m?.hex ?? "#a8a3b8"}88, var(--surface))` }}
+                >
+                  <ChogFace mood={cardMood} boosted={boosted} className="h-full w-full p-0.5" />
+                </div>
+              }
+              fallback={<ChogFace mood={cardMood} className="h-full w-full p-4" />}
+            />
+            {boosted && (
+              <span className="absolute right-2 top-2 -rotate-6 rounded-md border-2 border-[#1e1238] bg-pink px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-[#1e1238] shadow-[2px_2px_0_#1e1238]">
+                Boosted
+              </span>
+            )}
+          </div>
+          <div className="px-1 pb-1 pt-2.5">
+            {daemon.deployed ? (
+              <>
+                <div className="truncate font-display text-xl leading-none tabular-nums">{fmtUnits(state.totalAssets, asset?.decimals ?? 18, 2)}</div>
+                <div className="mt-1 text-xs font-semibold uppercase tracking-wider text-dim">{asset?.symbol ?? ""} saved</div>
+              </>
+            ) : (
+              <>
+                <div className="font-display text-lg leading-none">Fast asleep</div>
+                <div className="mt-1 text-xs font-semibold uppercase tracking-wider text-dim">Tap to wake it up</div>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </Link>

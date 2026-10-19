@@ -109,8 +109,8 @@ export function Hero() {
                 </svg>
               </span>
             </Link>
-            <a href="#play" className="sticker sticker-pop squish px-6 py-3.5 text-base font-bold">
-              ▶ Play with one now
+            <a href="#day" className="sticker sticker-pop squish px-6 py-3.5 text-base font-bold">
+              See a day in its life
             </a>
           </div>
         </div>
@@ -185,7 +185,7 @@ export function Hero() {
                   onClick={() => pick(i)}
                   className={cx(
                     "rounded-full px-2.5 py-1.5 text-sm font-bold transition sm:px-3.5",
-                    mood === i ? "bg-[#1e1238] text-white" : "text-[#1e1238]/70 hover:bg-[#1e1238]/10",
+                    mood === i ? "bg-[var(--st-fg)] text-[var(--st-bg)]" : "text-[var(--st-fg)] opacity-70 hover:opacity-100",
                   )}
                   title={x.blurb}
                 >

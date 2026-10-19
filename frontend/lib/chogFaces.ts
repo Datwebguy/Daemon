@@ -20,12 +20,16 @@ const GATEWAYS = ["https://ipfs.filebase.io/ipfs", "https://gateway.pinata.cloud
 export const artUrls = (artId: number): string[] => GATEWAYS.map((g) => `${g}/${IMAGE_CID}/${artId}.webp`);
 
 /** Resized, cached copy through the site's image optimizer (about 40KB instead of 290KB). */
-export const optimizedUrl = (url: string, width = 640): string => `/_next/image?url=${encodeURIComponent(url)}&w=${width}&q=72`;
+export const optimizedUrl = (url: string, width = 640): string => `/_next/image?url=${encodeURIComponent(url)}&w=${width}&q=75`;
 
-/** Fast-first list: the optimized copy, then the raw gateways as backups. */
+/** Mood faces stored with the site (small thumbnails), so the first screen never waits on a public gateway. */
+const LOCAL_FACES = new Set<number>(MOOD_FACES.flat().concat(ASLEEP_FACES));
+
+/** Fast-first list: our own copy if we have one, then the optimized copy, then the raw gateways as backups. */
 export const artSources = (artId: number, width = 640): string[] => {
   const raw = artUrls(artId);
-  return [optimizedUrl(raw[0]!, width), ...raw];
+  const own = LOCAL_FACES.has(artId) ? [`/chogs/${artId}.webp`] : [];
+  return [...own, optimizedUrl(raw[0]!, width), ...raw];
 };
 
 /** Pick a face for a mood; `seed` makes the choice stable (e.g. a token id) or rotating (a counter). */

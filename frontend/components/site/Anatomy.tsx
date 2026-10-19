@@ -19,7 +19,7 @@ export function Anatomy() {
         </div>
 
         <div className="relative" data-reveal style={{ ["--d" as string]: "120ms" }}>
-          <div className="clay relative overflow-hidden rounded-[2.25rem] p-6 sm:p-10">
+          <div className="sticker relative overflow-hidden !rounded-[2rem] p-6 sm:p-10">
             <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-6">
               {/* chog */}
               <div className="text-center">

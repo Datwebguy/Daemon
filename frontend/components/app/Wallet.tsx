@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { addressUrl, CHAIN_ID } from "@/lib/config";
 import { fmtUnits, shortAddr } from "@/lib/format";
 import { Button, cx } from "../ui";
+import { STICKER_BTN } from "./color";
 
 /** Sign-in button, or a wallet chip with balance and a small menu. */
 export function Wallet({ compact }: { compact?: boolean }) {
@@ -24,18 +25,18 @@ export function Wallet({ compact }: { compact?: boolean }) {
     return () => document.removeEventListener("mousedown", close);
   }, [open]);
 
-  if (!auth.ready) return <Button variant="ghost" loading size="sm" aria-label="Loading" />;
+  if (!auth.ready) return <Button variant="ghost" loading size="sm" aria-label="Loading" className="h-10 w-20 !rounded-full border-[3px] border-[color:var(--st-line)]" />;
   if (!auth.authenticated || !address)
     return (
-      <Button onClick={auth.login} size={compact ? "sm" : "md"}>
+      <Button onClick={auth.login} size={compact ? "sm" : "md"} className={cx("h-10", STICKER_BTN)}>
         Sign in
       </Button>
     );
 
   if (isConnected && chainId !== CHAIN_ID)
     return (
-      <Button variant="spark" size="sm" loading={isPending} onClick={() => switchChain({ chainId: CHAIN_ID })}>
-        Switch to Monad
+      <Button variant="spark" size="sm" loading={isPending} onClick={() => switchChain({ chainId: CHAIN_ID })} className={cx("h-10", STICKER_BTN)}>
+        Switch network
       </Button>
     );
 
@@ -44,17 +45,20 @@ export function Wallet({ compact }: { compact?: boolean }) {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="clay flex items-center gap-2.5 rounded-full py-1.5 pl-1.5 pr-4 text-sm font-semibold transition hover:brightness-[1.02]"
+        className="stk squish flex h-10 items-center gap-2 !rounded-full !shadow-[3px_3px_0_var(--st-shadow)] py-1 pl-1 pr-3 text-sm font-bold transition-transform hover:-translate-y-0.5 sm:gap-2.5 sm:pr-4"
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        <span className="grid h-7 w-7 place-items-center rounded-full text-xs font-bold text-white" style={{ background: avatarGradient(address) }} aria-hidden>
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border-2 border-[color:var(--st-line)] text-xs font-bold text-white" style={{ background: avatarGradient(address) }} aria-hidden>
           {name.slice(0, 1).toUpperCase()}
         </span>
-        <span className="tabular-nums">{fmtUnits(mon?.value, 18, 2)} MON</span>
+        <span className="tabular-nums">
+          {fmtUnits(mon?.value, 18, 2)}
+          <span className="hidden sm:inline"> MON</span>
+        </span>
       </button>
       {open && (
-        <div role="menu" className="clay absolute right-0 z-50 mt-2 w-64 rounded-3xl p-2 animate-pop">
+        <div role="menu" className="stk absolute right-0 z-50 mt-3 w-64 max-w-[calc(100vw-1.5rem)] p-2 animate-pop">
           <div className="px-3 py-2">
             <div className="text-xs text-dim">Signed in as</div>
             <div className="truncate font-semibold">{name}</div>
@@ -66,14 +70,14 @@ export function Wallet({ compact }: { compact?: boolean }) {
               setCopied(true);
               setTimeout(() => setCopied(false), 1500);
             }}
-            className="w-full rounded-2xl px-3 py-2.5 text-left text-sm hover:bg-surface-2"
+            className="w-full rounded-xl px-3 py-2.5 text-left text-sm hover:bg-jelly/15"
           >
             {copied ? "Copied!" : "Copy my wallet address"}
           </button>
-          <a role="menuitem" href={addressUrl(address)} target="_blank" rel="noreferrer" className="block rounded-2xl px-3 py-2.5 text-sm hover:bg-surface-2">
+          <a role="menuitem" href={addressUrl(address)} target="_blank" rel="noreferrer" className="block rounded-xl px-3 py-2.5 text-sm hover:bg-jelly/15">
             See my activity
           </a>
-          <button role="menuitem" onClick={auth.logout} className={cx("w-full rounded-2xl px-3 py-2.5 text-left text-sm text-rose-600 hover:bg-rose-500/10 dark:text-rose-400")}>
+          <button role="menuitem" onClick={auth.logout} className={cx("w-full rounded-xl px-3 py-2.5 text-left text-sm text-rose-600 hover:bg-rose-500/10 dark:text-rose-400")}>
             Sign out
           </button>
         </div>

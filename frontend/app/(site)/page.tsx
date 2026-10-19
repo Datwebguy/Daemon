@@ -4,7 +4,7 @@ import { Faq } from "@/components/site/Faq";
 import { Hero } from "@/components/site/Hero";
 import { Moods } from "@/components/site/Moods";
 import { NightShift } from "@/components/site/NightShift";
-import { Playground } from "@/components/site/Playground";
+import { DayInLife } from "@/components/site/DayInLife";
 import { RevealObserver } from "@/components/site/Reveal";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteNav } from "@/components/site/SiteNav";
@@ -19,7 +19,7 @@ export default function Landing() {
         <Hero />
         <Ticker />
         <ChogStrip />
-        <Playground id="play" />
+        <DayInLife />
         <Anatomy />
         <Story />
         <Moods />

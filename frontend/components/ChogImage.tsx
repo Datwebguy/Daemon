@@ -60,6 +60,10 @@ function Inner({
         fetchPriority={eager ? "high" : "auto"}
         crossOrigin="anonymous"
         decoding="async"
+        ref={(el) => {
+          // The picture may already be loaded before React attached onLoad (cached or fast): catch that case.
+          if (el && el.complete && el.naturalWidth > 0) setLoaded(true);
+        }}
         onLoad={() => setLoaded(true)}
         onError={() => setIdx((i) => i + 1)}
         className={cx("h-full w-full object-cover transition-[opacity,transform] duration-500", loaded ? "opacity-100" : "opacity-0", className)}

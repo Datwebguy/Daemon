@@ -63,6 +63,10 @@ function Face({ id, hue, boosted }: { id: number; hue?: string; boosted?: boolea
           alt=""
           decoding="async"
           crossOrigin="anonymous"
+          ref={(el) => {
+          // The picture may already be loaded before React attached onLoad (cached or fast): catch that case.
+          if (el && el.complete && el.naturalWidth > 0) setReady(true);
+        }}
           onLoad={() => setReady(true)}
           onError={() => setGw((g) => g + 1)}
           className={cx("h-full w-full object-cover transition-opacity duration-300", ready ? "opacity-100" : "opacity-0")}

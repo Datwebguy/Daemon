@@ -1,20 +1,23 @@
 "use client";
 
+import "@/app/(app)/daemon.css";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
-import { getAddress } from "viem";
+import { useState, type CSSProperties, type ReactNode } from "react";
+import { getAddress, type Address } from "viem";
 import { useAccount } from "wagmi";
 import { contracts } from "@/lib/config";
 import { fmtAgo, fmtDuration, fmtUnits, shortAddr } from "@/lib/format";
 import { useChog, useDaemonAddress, useDaemonState, useNow, useProtocol } from "@/lib/hooks";
-import { BACKGROUNDS, BODIES, EYES, vibeName } from "@/lib/mood";
+import { BACKGROUNDS, BODIES, EYES, moodOf, vibeName } from "@/lib/mood";
+import { cx } from "@/lib/cx";
 import { DaemonAvatar } from "../DaemonAvatar";
-import { cx, Empty, Loading, Segmented, Stat } from "../ui";
+import { Note, PadIcon, type Tone } from "./bits";
 import { CompoundPanel } from "./CompoundPanel";
 import { DeployPanel } from "./DeployPanel";
 import { HypePanel } from "./HypePanel";
 import { ShareButton } from "./ShareCard";
+import { StateScreen } from "./StateScreen";
 import { SweepPanel } from "./SweepPanel";
 import type { DaemonCtx } from "./types";
 import { YieldPanel } from "./YieldPanel";
@@ -29,6 +32,12 @@ function tabFromQuery(q: string | null): Tab | null {
   return null;
 }
 
+const PADS: { id: Tab; label: string; icon: "harvest" | "hype" | "vaults"; tone: Tone }[] = [
+  { id: "harvest", label: "Harvest", icon: "harvest", tone: "butter" },
+  { id: "hype", label: "Hype", icon: "hype", tone: "pink" },
+  { id: "save", label: "Vaults", icon: "vaults", tone: "sky" },
+];
+
 export function DaemonView({ tokenId }: { tokenId: bigint }) {
   const { address: user } = useAccount();
   const now = useNow();
@@ -37,32 +46,62 @@ export function DaemonView({ tokenId }: { tokenId: bigint }) {
   const daemon = useDaemonAddress(tokenId);
   const state = useDaemonState(daemon.address, daemon.deployed);
   const queryTab = tabFromQuery(useSearchParams().get("tab"));
-  const [tab, setTab] = useState<Tab | null>(null);
 
   if (!contracts.mockChog) {
     return (
-      <Empty title="Daemons are still waking up">
+      <StateScreen title="Daemons are still waking up" mood={4}>
         The app opens as soon as the network is ready. Check back shortly.
-      </Empty>
+      </StateScreen>
     );
   }
-  if (chog.isLoading) return <Loading label={`Finding Chog #${tokenId.toString()}…`} />;
+  if (chog.isLoading) return <StateScreen title={`Finding Chog #${tokenId.toString()}`} loading />;
   if (chog.error)
     return (
-      <Empty title="We couldn't reach the network">
+      <StateScreen title="We couldn't reach the network" mood={4} seed={1}>
         It usually comes back in a moment. Try refreshing the page.
-      </Empty>
+      </StateScreen>
     );
   if (chog.exists === false)
     return (
-      <Empty title={`Chog #${tokenId.toString()} doesn't exist yet`}>
-        Nobody has minted it.{" "}
-        <Link href="/explore" className="font-semibold text-jelly underline-offset-4 hover:underline">
-          Try another number
-        </Link>
-      </Empty>
+      <StateScreen
+        title={`Chog #${tokenId.toString()} doesn't exist yet`}
+        mood={2}
+        action={
+          <Link href="/explore" className="dm-btn dm-btn-lg dm-t-jelly font-display">
+            Find another Chog
+          </Link>
+        }
+      >
+        Nobody has minted it.
+      </StateScreen>
     );
 
+  return <DaemonScreen tokenId={tokenId} user={user} now={now} protocol={protocol} chog={chog} daemon={daemon} state={state} queryTab={queryTab} />;
+}
+
+type ChogData = ReturnType<typeof useChog>;
+
+/** The whole page once the data is in: the stage on the left, the deck on the right. */
+export function DaemonScreen({
+  tokenId,
+  user,
+  now,
+  protocol,
+  chog,
+  daemon,
+  state,
+  queryTab,
+}: {
+  tokenId: bigint;
+  user?: Address;
+  now: number;
+  protocol: DaemonCtx["protocol"];
+  chog: ChogData;
+  daemon: Pick<ReturnType<typeof useDaemonAddress>, "address" | "deployed" | "isLoading" | "canCreate" | "refetchCode">;
+  state: DaemonCtx["state"];
+  queryTab: Tab | null;
+}) {
+  const [tab, setTab] = useState<Tab | null>(null);
   const owner = state.owner ?? chog.owner;
   const isOwner = Boolean(user && owner && getAddress(user) === getAddress(owner));
   const boostLive = state.boost ? Number(state.boost.expiresAt) > now && state.boost.multiplierBps > BigInt(10_000) : false;
@@ -75,172 +114,274 @@ export function DaemonView({ tokenId }: { tokenId: bigint }) {
   const awake = Boolean(ctx && daemon.deployed);
   const empty = state.totalAssets !== undefined && state.totalAssets === BigInt(0);
   const current: Tab = tab ?? queryTab ?? (isOwner && empty ? "save" : "harvest");
+  const moodNow = awake ? state.mood : undefined;
+  const wall = moodOf(moodNow)?.hex ?? "#94a3b8";
+  const readyAt = state.nextCompoundAt !== undefined ? Number(state.nextCompoundAt) : undefined;
+  const resting = readyAt !== undefined && readyAt > now;
+  const padNote: Record<Tab, string> = {
+    harvest: !awake ? "Keep the tip" : resting ? `Rests ${fmtDuration((readyAt ?? 0) - now)}` : "Ready, keep the tip",
+    hype: mult ? `Boost x${mult.toFixed(2)}` : "Cheer it on",
+    save: isOwner ? "Earn rewards" : "See the vaults",
+  };
+  const idx = PADS.findIndex((p) => p.id === current);
+  const pad = PADS[idx] ?? PADS[0]!;
 
   return (
-    <div className="space-y-8">
-      {/* title row */}
-      <header className="flex flex-wrap items-center gap-x-4 gap-y-3">
-        <Link href={isOwner ? "/app" : "/explore"} className="grid h-10 w-10 place-items-center rounded-full clay" aria-label="Back">
-          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M15 6l-6 6 6 6" />
-          </svg>
-        </Link>
-        <h1 className="font-display text-[clamp(2rem,4.5vw,3rem)] font-extrabold leading-none tracking-tight">Chog #{tokenId.toString()}</h1>
-        <span className={cx("rounded-full px-3 py-1 text-sm font-semibold", isOwner ? "bg-jelly text-white" : "bg-surface-2 text-dim")}>
-          {isOwner ? "Yours" : owner ? `Held by ${shortAddr(owner)}` : "Visitor"}
-        </span>
-        <div className="ml-auto">{ctx && awake && <ShareButton ctx={ctx} image={chog.image} />}</div>
-      </header>
+    <div className="dm-root" style={{ "--mood": wall } as CSSProperties}>
+      {/* ------------------------------ the stage ------------------------------ */}
+      <section className="dm-stage" aria-label={`Chog #${tokenId.toString()}`}>
+        <div aria-hidden className="dm-layer dm-pop" />
+        <div aria-hidden className="dm-layer dm-ink" />
+        <div aria-hidden className="dm-layer dm-wall slash">
+          <div className="dots absolute inset-0 opacity-70" />
+          <div className="tape-bg absolute inset-x-0 top-0 h-16 opacity-70" />
+          <span className="dm-watermark font-display">#{tokenId.toString()}</span>
+        </div>
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:gap-10">
-        {/* stage */}
-        <aside className="lg:sticky lg:top-24 lg:self-start">
-          <div className="clay rounded-[2.25rem] px-5 pb-7 pt-6">
-            <DaemonAvatar
-              images={chog.images}
-              name={chog.realName ?? `Chog #${tokenId.toString()}`}
-              mood={awake ? state.mood : undefined}
-              message={awake ? state.lastMessage : undefined}
-              boosted={boostLive}
-              multiplier={mult}
-            />
-            <Traits chog={chog} />
-            {awake && daemon.address && (
-              <details className="mt-4 text-sm">
-                <summary className="cursor-pointer text-dim hover:text-fg">Daemon wallet details</summary>
-                <div className="mt-2 flex items-center justify-between gap-2 rounded-2xl bg-surface-2 px-3 py-2">
+        <div className="dm-stage-inner">
+          <div className="relative z-10 flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <Link
+                href={isOwner ? "/app" : "/explore"}
+                aria-label="Back"
+                className="sticker squish grid h-11 w-11 shrink-0 place-items-center !rounded-full !shadow-[3px_3px_0_var(--st-shadow)]"
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M15 6l-6 6 6 6" />
+                </svg>
+              </Link>
+              <h1
+                className="sticker -rotate-2 !rounded-xl px-3.5 py-1.5 font-display text-xl leading-none sm:text-2xl"
+                style={{ background: "var(--butter)" }}
+              >
+                Chog #{tokenId.toString()}
+              </h1>
+            </div>
+            {ctx && awake && <ShareButton ctx={ctx} images={chog.images} />}
+          </div>
+
+          <DaemonAvatar
+            images={chog.images}
+            name={chog.realName ?? `Chog #${tokenId.toString()}`}
+            mood={moodNow}
+            boosted={boostLive}
+            multiplier={mult}
+          >
+            <TraitStickers chog={chog} />
+          </DaemonAvatar>
+          <TraitList chog={chog} className="mt-9 lg:hidden" />
+
+          <HeldBy isOwner={isOwner} owner={owner} className="mt-7 self-start lg:absolute lg:bottom-5 lg:left-6 lg:mt-0" />
+
+          <Bubble
+            text={awake ? state.lastMessage : undefined}
+            asleep={moodNow === undefined}
+            className="mt-8 -mb-10 lg:absolute lg:bottom-[4.4rem] lg:left-6 lg:-right-[1.6rem] lg:mb-0 lg:mt-0"
+          />
+        </div>
+      </section>
+
+      {/* ------------------------------- the deck ------------------------------ */}
+      <section className="dm-deck" aria-label="Controls">
+        {ctx && !daemon.deployed && !daemon.isLoading && (
+          <DeployPanel tokenId={tokenId} user={user} isOwner={isOwner} canCreate={daemon.canCreate} onDeployed={() => void daemon.refetchCode()} />
+        )}
+        {ctx && daemon.isLoading && <Note>Looking for this Daemon…</Note>}
+        {!ctx && !daemon.isLoading && (
+          <Note tone="warn" title="This Daemon can't be reached yet">
+            Check back in a little while.
+          </Note>
+        )}
+
+        {ctx && awake && (
+          <>
+            {/* tape strip with the four numbers */}
+            <div className="dm-strip">
+              <div aria-hidden className="tape-bg h-2.5 border-b-[3px] border-[var(--st-line)]" />
+              <dl className="dm-strip-grid">
+                <Cell label="Saved" hint={sym || undefined}>
+                  <span className="font-display">{fmtUnits(state.totalAssets, dec, 2)}</span>
+                </Cell>
+                <Cell label="Earned so far" hint={sym || undefined}>
+                  <span className="font-display text-[color:var(--c-mint)]">+{fmtUnits(state.lifetimeYield, dec, 2)}</span>
+                </Cell>
+                <Cell label="Boost" hint={boostLive && state.boost ? `${fmtDuration(Number(state.boost.expiresAt) - now)} left` : "hype to boost"}>
+                  <span className={cx("font-display", mult ? "text-[color:var(--c-pink)]" : "text-dim")}>x{(mult ?? 1).toFixed(2)}</span>
+                </Cell>
+                <Cell label="Next harvest" hint={resting ? "resting" : "anyone can do it"}>
+                  <span className="dm-marker font-display">{resting ? fmtDuration((readyAt ?? 0) - now) : "Ready"}</span>
+                </Cell>
+              </dl>
+            </div>
+
+            {/* three pads */}
+            <div role="group" aria-label="What do you want to do?" className="dm-pads">
+              {PADS.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  aria-pressed={current === p.id}
+                  aria-controls="dm-panel"
+                  onClick={() => setTab(p.id)}
+                  className={cx("dm-pad", `dm-t-${p.tone}`)}
+                >
+                  <PadIcon kind={p.icon} />
+                  <span className="mt-1 font-display text-[1.2rem] sm:text-[1.4rem] leading-none">{p.label}</span>
+                  <span className="text-[11px] font-bold leading-tight opacity-80 sm:text-xs">{padNote[p.id]}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* the panel opens under the pressed pad */}
+            <div className={cx("dm-panelwrap", `dm-t-${pad.tone}`)} style={{ "--i": idx } as CSSProperties}>
+              <span aria-hidden className="dm-notch" />
+              <div id="dm-panel" key={current} className="sticker dm-panel @container" style={{ animation: "rise .4s ease both" }}>
+                {current === "harvest" && <CompoundPanel ctx={ctx} />}
+                {current === "hype" && <HypePanel ctx={ctx} />}
+                {current === "save" && <YieldPanel ctx={ctx} />}
+              </div>
+            </div>
+
+            {daemon.address && (
+              <details className="text-sm">
+                <summary className="cursor-pointer font-semibold text-dim hover:text-fg">Daemon wallet details</summary>
+                <div className="dm-note mt-2 flex items-center justify-between gap-2">
                   <span className="truncate font-mono text-xs">{daemon.address}</span>
-                  <button className="shrink-0 text-xs font-semibold text-jelly" onClick={() => void navigator.clipboard?.writeText(daemon.address!)}>
+                  <button className="shrink-0 text-xs font-extrabold text-jelly underline-offset-4 hover:underline" onClick={() => void navigator.clipboard?.writeText(daemon.address!)}>
                     Copy
                   </button>
                 </div>
                 {state.lastActivityAt !== undefined && <p className="mt-2 text-xs text-dim">Last active {fmtAgo(Number(state.lastActivityAt), now)}</p>}
               </details>
             )}
-          </div>
-        </aside>
 
-        {/* actions */}
-        <div className="space-y-6">
-          {ctx && !daemon.deployed && !daemon.isLoading && (
-            <DeployPanel tokenId={tokenId} user={user} isOwner={isOwner} canCreate={daemon.canCreate} onDeployed={() => void daemon.refetchCode()} />
-          )}
-          {!ctx && !daemon.isLoading && (
-            <Empty title="This Daemon can't be reached yet">
-              Check back in a little while.
-            </Empty>
-          )}
+            {!isOwner && (
+              <p className="text-center text-sm text-dim">
+                This isn&apos;t your Chog, but you can still harvest it (and keep the tip) or hype it to cheer it on.
+              </p>
+            )}
 
-          {ctx && awake && (
-            <>
-              <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-                <Stat label="Saved" value={`${fmtUnits(state.totalAssets, dec, 2)}`} hint={sym} />
-                <Stat label="Earned so far" value={`+${fmtUnits(state.lifetimeYield, dec, 2)}`} hint={sym} tone="mint" />
-                <Stat label="Boost" value={mult ? `${mult.toFixed(2)}×` : "1.00×"} hint={boostLive && state.boost ? `${fmtDuration(Number(state.boost.expiresAt) - now)} left` : "hype to boost"} tone={mult ? "spark" : undefined} />
-                <Stat
-                  label="Next harvest"
-                  value={
-                    state.nextCompoundAt !== undefined && Number(state.nextCompoundAt) > now ? fmtDuration(Number(state.nextCompoundAt) - now) : "Ready"
-                  }
-                  hint={state.nextCompoundAt !== undefined && Number(state.nextCompoundAt) > now ? "resting" : "anyone can do it"}
-                  tone="jelly"
-                />
-              </div>
-
-              <section className="clay rounded-[2rem] p-5 sm:p-7">
-                <Segmented<Tab>
-                  label="What do you want to do?"
-                  value={current}
-                  onChange={setTab}
-                  options={[
-                    { value: "harvest", label: "Harvest" },
-                    { value: "hype", label: "Hype" },
-                    { value: "save", label: isOwner ? "Savings" : "Vaults" },
-                  ]}
-                />
-                <div key={current} className="mt-6" style={{ animation: "rise .4s ease both" }}>
-                  {current === "harvest" && <CompoundPanel ctx={ctx} />}
-                  {current === "hype" && <HypePanel ctx={ctx} />}
-                  {current === "save" && <YieldPanel ctx={ctx} />}
-                </div>
-              </section>
-
-              <SweepPanel ctx={ctx} />
-
-              {!isOwner && (
-                <p className="text-center text-sm text-dim">
-                  This isn&apos;t your Chog, but you can still harvest it (and keep the tip) or hype it to cheer it on.
-                </p>
-              )}
-            </>
-          )}
-        </div>
-      </div>
+            <SweepPanel ctx={ctx} />
+          </>
+        )}
+      </section>
     </div>
   );
 }
 
-type ChogData = ReturnType<typeof useChog>;
+function Cell({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+  return (
+    <div className="dm-cell">
+      <dt className="text-[11px] font-extrabold uppercase tracking-wider text-dim">{label}</dt>
+      <dd className="dm-num">{children}</dd>
+      {hint && <dd className="truncate text-xs text-dim">{hint}</dd>}
+    </div>
+  );
+}
 
-const TIER_STYLE: Record<string, string> = {
-  common: "bg-slate-400/20 text-slate-700 dark:text-slate-300",
-  uncommon: "bg-emerald-400/20 text-emerald-700 dark:text-emerald-300",
-  rare: "bg-sky-400/20 text-sky-700 dark:text-sky-300",
-  epic: "bg-violet-500/20 text-violet-700 dark:text-violet-300",
-  legendary: "bg-amber-400/25 text-amber-700 dark:text-amber-300",
+function HeldBy({ isOwner, owner, className }: { isOwner: boolean; owner?: string; className?: string }) {
+  return (
+    <div
+      className={cx("sticker relative z-10 -rotate-3 !rounded-xl px-3 py-1.5 text-sm font-extrabold !shadow-[3px_3px_0_var(--st-shadow)]", className)}
+      style={isOwner ? { background: "var(--butter)" } : undefined}
+    >
+      {isOwner ? "Yours" : owner ? `Held by ${shortAddr(owner)}` : "Visitor"}
+    </div>
+  );
+}
+
+/** The Daemon's latest words: a big speech bubble that spills over the seam into the deck. */
+function Bubble({ text, asleep, className }: { text?: string; asleep: boolean; className?: string }) {
+  const line = text ? `“${text}”` : asleep ? "zzz…" : "“gm. Nothing to report yet.”";
+  return (
+    <div key={text} className={cx("dm-bubble sticker animate-pop relative", className)} aria-live="polite">
+      <span aria-hidden className="dm-bubble-tail" />
+      <p className="relative font-display text-[clamp(1.2rem,2.3vw,1.9rem)] leading-tight [text-wrap:balance]">{line}</p>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Traits: tilted stickers scattered around the art                    */
+/* ------------------------------------------------------------------ */
+
+const TIER_HEX: Record<string, string> = {
+  common: "#cbd5e1",
+  uncommon: "#6ee7b7",
+  rare: "#7dd3fc",
+  epic: "#c4b5fd",
+  legendary: "#fcd34d",
 };
-const SHOWN = ["Head", "Eyes", "Accessory", "Body", "Background", "Form"] as const;
+const SHOWN = ["Head", "Eyes", "Accessory", "Body", "Form", "Background"] as const;
 const isEmpty = (v: string) => !v || /^(none|null|undefined|-)$/i.test(v);
 
+/** Where each sticker sits against the art frame on desktop (alternating left / right). */
+const SLOTS: CSSProperties[] = [
+  { left: "-10%", top: "15%", rotate: "-5deg" },
+  { right: "-10%", top: "23%", rotate: "4deg" },
+  { left: "-12%", top: "41%", rotate: "3deg" },
+  { right: "-12%", top: "47%", rotate: "-4deg" },
+  { left: "-9%", top: "63%", rotate: "-3deg" },
+  { right: "-10%", top: "70%", rotate: "3deg" },
+];
+
 /** The Chog's real traits; falls back to the Daemon's own invented traits if the art data is unavailable. */
-function Traits({ chog }: { chog: ChogData }) {
+function traitsOf(chog: ChogData): { tier?: string; chips: { k: string; v: string }[] } {
   const find = (name: string) => chog.attributes.find((a) => a.trait_type.toLowerCase() === name.toLowerCase())?.value;
   const tier = find("Tier");
-  const chips = SHOWN.map((k) => ({ k, v: find(k) })).filter((c): c is { k: (typeof SHOWN)[number]; v: string } => c.v !== undefined && !isEmpty(c.v));
+  const real = SHOWN.map((k) => ({ k: k as string, v: find(k) })).filter((c): c is { k: string; v: string } => c.v !== undefined && !isEmpty(c.v));
+  if (chog.attributes.length > 0 && (tier || real.length > 0)) return { tier: tier && !isEmpty(tier) ? tier : undefined, chips: real };
+  if (!chog.traits) return { chips: [] };
+  return {
+    chips: [
+      { k: "Vibe", v: vibeName(chog.traits.vibe) },
+      { k: "Body", v: BODIES[chog.traits.body] ?? "Mystery" },
+      { k: "Eyes", v: EYES[chog.traits.eyes] ?? "Mystery" },
+      { k: "Backdrop", v: BACKGROUNDS[chog.traits.background] ?? "Mystery" },
+    ],
+  };
+}
 
-  if (chog.attributes.length > 0 && (tier || chips.length > 0)) {
-    return (
-      <div className="mt-7">
-        {chog.realName && <p className="mb-3 text-center text-xs text-dim">{chog.realName} · testnet replica</p>}
-        {tier && !isEmpty(tier) && (
-          <div className="mb-3 flex justify-center">
-            <span
-              className={cx(
-                "rounded-full px-4 py-1.5 font-display text-base font-extrabold tracking-wide",
-                TIER_STYLE[tier.toLowerCase()] ?? "bg-surface-2 text-fg",
-              )}
-            >
-              {tier}
-            </span>
-          </div>
-        )}
-        <dl className="flex flex-wrap justify-center gap-1.5 text-xs">
-          {chips.map((c) => (
-            <div key={c.k} className="rounded-full bg-surface-2 px-3 py-1.5">
-              <dt className="inline text-dim">{c.k}: </dt>
-              <dd className="inline font-semibold">{c.v}</dd>
-            </div>
-          ))}
-        </dl>
-      </div>
-    );
-  }
-  if (!chog.traits) return null;
+function TraitStickers({ chog }: { chog: ChogData }) {
+  const { tier, chips } = traitsOf(chog);
   return (
-    <dl className="mt-7 grid grid-cols-2 gap-2 text-sm">
-      <Trait k="Vibe" v={vibeName(chog.traits.vibe)} />
-      <Trait k="Body" v={BODIES[chog.traits.body] ?? "Mystery"} />
-      <Trait k="Eyes" v={EYES[chog.traits.eyes] ?? "Mystery"} />
-      <Trait k="Backdrop" v={BACKGROUNDS[chog.traits.background] ?? "Mystery"} />
-    </dl>
+    <>
+      {tier && (
+        <div
+          className="sticker absolute -top-[2.1rem] left-[4%] z-10 -rotate-6 !rounded-2xl px-4 py-1.5 sm:-top-9"
+          style={{ background: TIER_HEX[tier.toLowerCase()] ?? "#e2e8f0" }}
+        >
+          <span className="block text-[10px] font-extrabold uppercase leading-none tracking-widest opacity-70">Tier</span>
+          <span className="font-display text-2xl leading-none sm:text-3xl">{tier}</span>
+        </div>
+      )}
+      <ul className="hidden lg:block">
+        {chips.slice(0, SLOTS.length).map((c, i) => (
+          <li key={c.k} className="absolute z-10 max-w-[52%]" style={SLOTS[i]}>
+            <div className="sticker dm-chip !rounded-xl !shadow-[3px_3px_0_var(--st-shadow)]">
+              <small>{c.k}</small>
+              <b>{c.v}</b>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }
 
-function Trait({ k, v }: { k: string; v: string }) {
+function TraitList({ chog, className }: { chog: ChogData; className?: string }) {
+  const { chips } = traitsOf(chog);
+  if (chips.length === 0) return null;
   return (
-    <div className="rounded-2xl bg-surface-2 px-3 py-2">
-      <dt className="text-xs text-dim">{k}</dt>
-      <dd className="font-semibold">{v}</dd>
-    </div>
+    <ul className={cx("relative z-10 flex flex-wrap justify-center gap-2.5", className)}>
+      {chips.map((c, i) => (
+        <li key={c.k} style={{ rotate: `${(i % 2 ? 1 : -1) * (2 + (i % 3))}deg` }}>
+          <div className="sticker dm-chip !rounded-xl !shadow-[3px_3px_0_var(--st-shadow)]">
+            <small>{c.k}</small>
+            <b>{c.v}</b>
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }

@@ -53,10 +53,10 @@ export function Faq() {
         </div>
         <div className="space-y-3">
           {QA.map((x, i) => (
-            <details key={x.q} className="clay group rounded-[1.5rem] px-6 py-5" data-reveal style={{ ["--d" as string]: `${i * 40}ms` }}>
+            <details key={x.q} className="sticker sticker-pop group !rounded-2xl px-6 py-5" data-reveal style={{ ["--d" as string]: `${i * 40}ms` }}>
               <summary className="flex cursor-pointer items-center justify-between gap-6 font-display text-lg font-bold">
                 {x.q}
-                <span className="faq-icon grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-2 transition-transform duration-300" aria-hidden>
+                <span className="faq-icon grid h-9 w-9 shrink-0 place-items-center rounded-full bg-butter text-[#1e1238] transition-transform duration-300" aria-hidden>
                   <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
                     <path d="M12 5v14M5 12h14" />
                   </svg>

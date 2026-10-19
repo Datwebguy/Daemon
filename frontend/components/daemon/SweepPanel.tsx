@@ -6,7 +6,9 @@ import { daemonAccountAbi } from "@/lib/abis";
 import { CHAIN_ID } from "@/lib/config";
 import { fmtUnits } from "@/lib/format";
 import { useTx } from "@/lib/tx";
-import { Button, Dialog } from "../ui";
+import { Spinner } from "../ui";
+import { StickerButton } from "./bits";
+import { StickerDialog } from "./StickerDialog";
 import type { DaemonCtx } from "./types";
 
 const LABEL = "Take everything out";
@@ -38,16 +40,28 @@ export function SweepPanel({ ctx }: { ctx: DaemonCtx }) {
   };
 
   return (
-    <section className="flex flex-col gap-4 rounded-[1.75rem] border border-dashed border-line p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-      <div>
-        <h2 className="font-display text-lg font-bold">Take everything out</h2>
-        <p className="mt-1 max-w-md text-sm text-dim">Empty every vault and the hype jar straight into your wallet. Always available to you, no questions asked.</p>
-      </div>
-      <Button variant="ghost" onClick={() => setOpen(true)} loading={pending === LABEL} className="shrink-0">
-        Take it all out
-      </Button>
-      <Dialog open={open} onClose={() => setOpen(false)} title="Take everything out?">
-        <div className="clay-sunk space-y-2 rounded-2xl p-4 text-sm">
+    <section className="dm-tear" aria-label="Take everything out">
+      <button type="button" className="dm-tear-btn" onClick={() => setOpen(true)} disabled={pending === LABEL}>
+        <span className="min-w-0">
+          <span className="block font-display text-xl leading-tight sm:text-2xl">Take everything out</span>
+          <span className="mt-0.5 block max-w-md text-sm text-dim">
+            Empty every vault and the hype jar straight into your wallet. Always available to you, no questions asked.
+          </span>
+        </span>
+        <span className="dm-tab" aria-hidden>
+          {pending === LABEL ? (
+            <Spinner className="h-4 w-4" />
+          ) : (
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 6l-6 6 6 6" />
+            </svg>
+          )}
+          Pull
+        </span>
+      </button>
+
+      <StickerDialog open={open} onClose={() => setOpen(false)} title="Take everything out?">
+        <div className="space-y-2 rounded-2xl border-[3px] border-dashed border-[var(--st-line)] p-4 text-sm">
           <Row k="Savings" v={`about ${fmtUnits(state.totalAssets, protocol.asset?.decimals ?? 18)} ${sym}`} />
           <Row
             k="Hype jar"
@@ -56,15 +70,22 @@ export function SweepPanel({ ctx }: { ctx: DaemonCtx }) {
           <Row k="Goes to" v="Your wallet" />
         </div>
         <p className="mt-4 text-sm text-dim">Your Daemon will stop earning until you put money back in. Its mood and history stay.</p>
-        <div className="mt-6 flex justify-end gap-2">
-          <Button variant="ghost" onClick={() => setOpen(false)}>
+        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <StickerButton tone="butter" size="md" onClick={() => setOpen(false)}>
             Keep it working
-          </Button>
-          <Button variant="danger" onClick={sweep} loading={pending === LABEL}>
+          </StickerButton>
+          <button
+            type="button"
+            onClick={sweep}
+            disabled={pending === LABEL}
+            className="dm-btn dm-btn-md font-display"
+            style={{ ["--tone" as string]: "#f43f5e", ["--on" as string]: "#fff" }}
+          >
+            {pending === LABEL && <Spinner className="h-4 w-4" />}
             Yes, take it all out
-          </Button>
+          </button>
         </div>
-      </Dialog>
+      </StickerDialog>
     </section>
   );
 }
@@ -73,7 +94,7 @@ function Row({ k, v }: { k: string; v: string }) {
   return (
     <div className="flex justify-between gap-4">
       <span className="text-dim">{k}</span>
-      <span className="text-right font-semibold tabular-nums">{v}</span>
+      <span className="text-right font-bold tabular-nums">{v}</span>
     </div>
   );
 }
