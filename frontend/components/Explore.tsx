@@ -90,22 +90,22 @@ export function Explore() {
         Visit any Chog&apos;s Daemon. Harvest it and keep the tip, or hype it to cheer it on.
       </PageHero>
 
-      <div className="space-y-14 px-4 py-10 sm:px-6 lg:px-10">
-        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_15rem]">
+      <div className="space-y-8 px-4 py-6 sm:space-y-14 sm:px-6 sm:py-10 lg:px-10">
+        <div className="grid items-center gap-6 sm:gap-10 lg:grid-cols-[minmax(0,1fr)_15rem]">
           {/* the ticket: type a number, tear off a Daemon */}
           <div className="mx-auto w-full max-w-3xl [filter:drop-shadow(6px_6px_0_var(--st-shadow))] lg:mx-0">
             <div className="ticket bg-[color:var(--st-line)] p-[3px]">
               <form
-                className="ticket grid min-h-[17rem] grid-rows-2 bg-[var(--st-bg)] text-[color:var(--st-fg)]"
+                className="ticket grid min-h-[12.5rem] grid-rows-2 sm:min-h-[17rem] bg-[var(--st-bg)] text-[color:var(--st-fg)]"
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (valid) router.push(`/daemon/${id.trim()}`);
                 }}
               >
-                <label className="flex flex-col justify-center gap-1 px-8 pt-3 sm:px-12">
+                <label className="flex flex-col justify-center gap-1 px-6 pt-3 sm:px-12">
                   <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-dim">Admit one Daemon &middot; Chog number</span>
                   <span className="flex items-center gap-2 border-b-4 border-dashed border-[color:var(--st-line)]/30 transition-colors has-[input:focus-visible]:border-jelly">
-                    <span aria-hidden className="font-display text-5xl text-jelly sm:text-7xl">
+                    <span aria-hidden className="font-display text-4xl text-jelly sm:text-7xl">
                       #
                     </span>
                     <input
@@ -114,12 +114,12 @@ export function Explore() {
                       value={id}
                       onChange={(e) => setId(e.target.value.replace(/[^\d]/g, ""))}
                       aria-label="Chog number"
-                      className="w-full min-w-0 bg-transparent py-1 font-display text-5xl outline-none placeholder:text-dim/40 sm:text-7xl"
+                      className="w-full min-w-0 bg-transparent py-1 font-display text-4xl outline-none placeholder:text-dim/40 sm:text-7xl"
                     />
                   </span>
                 </label>
-                <div className="flex flex-wrap content-center items-center justify-between gap-x-4 gap-y-3 border-t-[3px] border-dashed border-[color:var(--st-line)]/50 px-8 py-3 sm:px-12">
-                  <span className="text-sm text-dim">{total > 0 ? `${total.toLocaleString()} Chogs minted so far` : "Pick any number you like"}</span>
+                <div className="flex flex-wrap content-center items-center justify-between gap-x-4 gap-y-3 border-t-[3px] border-dashed border-[color:var(--st-line)]/50 px-6 py-3 sm:px-12">
+                  <span className="text-xs text-dim sm:text-sm">{total > 0 ? `${total.toLocaleString()} Chogs minted so far` : "Pick any number you like"}</span>
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
@@ -256,13 +256,13 @@ function HarvestRound() {
   return (
     <section className="stk grid overflow-hidden !rounded-[1.75rem] !shadow-[6px_6px_0_var(--st-shadow)] md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
       {/* colour block: what it is and where to type the numbers */}
-      <div className="split-a relative z-10 bg-butter p-6 pb-10 text-[#1e1238] sm:p-8 md:pb-8 md:pr-20">
+      <div className="split-a relative z-10 bg-butter p-5 pb-9 text-[#1e1238] sm:p-8 md:pb-8 md:pr-20">
         <div aria-hidden className="tape-bg absolute inset-0 opacity-60" />
         <div className="relative">
-          <h2 className="font-display text-3xl leading-none sm:text-4xl">Go on a harvest round</h2>
-          <p className="mt-3 text-sm font-medium">Check a bunch of Daemons and harvest every ready one at once. You keep all the tips.</p>
+          <h2 className="font-display text-2xl leading-none sm:text-4xl">Go on a harvest round</h2>
+          <p className="mt-2 text-[13px] font-medium sm:mt-3 sm:text-sm">Check a bunch of Daemons and harvest every ready one at once. You keep all the tips.</p>
           <form
-            className="mt-5 flex gap-2"
+            className="mt-4 flex gap-2 sm:mt-5"
             onSubmit={(e) => {
               e.preventDefault();
               if (parsedIds.ids.length > 0 && !scanning) void doScan();
@@ -293,7 +293,7 @@ function HarvestRound() {
       </div>
 
       {/* dark block: the tally */}
-      <div className="split-b relative z-20 -mt-3.5 bg-night px-6 pb-8 pt-12 text-white sm:px-8 md:z-0 md:-ml-[3.2rem] md:mt-0 md:pl-20 md:pt-8">
+      <div className="split-b relative z-20 -mt-3.5 bg-night px-5 pb-6 pt-10 text-white sm:px-8 sm:pb-8 sm:pt-12 md:z-0 md:-ml-[3.2rem] md:mt-0 md:pl-20 md:pt-8">
         <div className="grid grid-cols-2 gap-3">
           <Counter label="Ready to harvest" dim={!scan}>
             <span className="text-white">{scan ? ready.length : "0"}</span>
@@ -328,7 +328,7 @@ function Counter({ label, dim, children }: { label: string; dim?: boolean; child
   return (
     <div className={cx("min-w-0 rounded-2xl border-[3px] border-white/25 bg-white/[0.06] px-4 py-3", dim && "opacity-70")}>
       <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/60">{label}</div>
-      <div className="mt-1 flex items-baseline truncate font-display text-5xl leading-none tabular-nums">{children}</div>
+      <div className="mt-1 flex items-baseline truncate font-display text-4xl leading-none tabular-nums sm:text-5xl">{children}</div>
     </div>
   );
 }

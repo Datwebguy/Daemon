@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Bagel_Fat_One, Onest } from "next/font/google";
 import type { ReactNode } from "react";
+import { Ambient } from "@/components/Ambient";
 import { Providers } from "@/components/Providers";
 import { themeInitScript } from "@/components/ThemeProvider";
 import "./globals.css";
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: jsMarker }} />
       </head>
       <body className="min-h-screen font-sans">
+        <Ambient />
         <Providers>{children}</Providers>
       </body>
     </html>

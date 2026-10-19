@@ -5,11 +5,37 @@ import { useTheme } from "./ThemeProvider";
 
 /**
  * Always-visible Light / Dark switch. A sliding thumb shows which side you are on;
- * the labels stay readable in both themes. `compact` hides the words on small screens.
+ * the labels stay readable in both themes. `compact` hides the words on small screens;
+ * `mini` swaps the switch for a single round button on phones.
  */
-export function ThemeToggle({ className, compact, iconOnly }: { className?: string; compact?: boolean; iconOnly?: boolean }) {
+export function ThemeToggle({ className, compact, iconOnly, mini }: { className?: string; compact?: boolean; iconOnly?: boolean; mini?: boolean }) {
   const { theme, toggle } = useTheme();
   const dark = theme === "dark";
+  if (mini)
+    return (
+      <>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={dark}
+          aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+          onClick={toggle}
+          className={cx("sticker squish grid h-10 w-10 shrink-0 place-items-center !rounded-full !bg-butter text-[#1e1238] sm:hidden", className)}
+        >
+          {dark ? (
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden>
+              <path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+            </svg>
+          )}
+        </button>
+        <ThemeToggle compact className={cx("max-sm:!hidden", className)} />
+      </>
+    );
   return (
     <button
       type="button"

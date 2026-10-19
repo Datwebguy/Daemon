@@ -317,8 +317,22 @@ function Cartridge({
   const face = (
     <>
       <div className="dm-cart-grip">
-        <span className="font-display text-[0.95rem] leading-none sm:text-base">{look.name}</span>
-        <span className="text-[9px] font-extrabold uppercase tracking-wider">{!p.approved ? "Closed" : selected ? "In the slot" : ""}</span>
+        <span className="min-w-0 truncate font-display text-[0.95rem] leading-none sm:text-base">{look.name}</span>
+        <span className="shrink-0 whitespace-nowrap text-[9px] font-extrabold uppercase tracking-wider">
+          {!p.approved ? "Closed" : selected ? (
+            <>
+              <span className="max-sm:hidden">In the slot</span>
+              <span aria-hidden className="grid h-4 w-4 place-items-center rounded-full bg-[#1e1238] text-white sm:hidden">
+                <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12l5 5L20 7" />
+                </svg>
+              </span>
+              <span className="sr-only sm:hidden">In the slot</span>
+            </>
+          ) : (
+            ""
+          )}
+        </span>
       </div>
       <div className="dm-cart-window">
         <svg viewBox="0 0 120 48" className="block h-12 w-full" fill="none" stroke="#1e1238" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>

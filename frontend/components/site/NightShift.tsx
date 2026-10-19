@@ -21,19 +21,19 @@ export function NightShift() {
       <Image src="/media/glass-iridescent.jpg" alt="" fill sizes="100vw" className="-z-20 animate-drift object-cover opacity-55" />
       <div aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(80%_70%_at_20%_30%,transparent,rgb(11_8_20/0.92))]" />
 
-      <div className="mx-auto max-w-6xl px-5 py-28 sm:px-8 sm:py-36">
-        <div className="grid gap-16 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+      <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-36">
+        <div className="grid gap-8 sm:gap-16 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
           <div data-reveal>
-            <h2 className="font-display text-[clamp(2.4rem,5.6vw,4.2rem)] font-extrabold leading-[0.95] tracking-tight">
+            <h2 className="font-display text-[clamp(1.85rem,7vw,4.2rem)] font-extrabold leading-[1] tracking-tight">
               It works the night shift.
               <span className="block text-white/70 [text-shadow:0_2px_24px_rgb(11_8_20/0.9)]">You don&apos;t have to.</span>
             </h2>
-            <p className="mt-6 max-w-lg text-lg leading-relaxed text-white/75">
+            <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-white/75 sm:mt-6 sm:text-lg">
               Nobody runs Daemons for you, and nobody needs to. Anyone in the world can harvest any Daemon and earn a tip for it, so there&apos;s
               always someone with a reason to keep yours growing.
             </p>
 
-            <ul className="mt-10 grid gap-x-8 gap-y-6 sm:grid-cols-2">
+            <ul className="mt-6 grid grid-cols-2 gap-x-4 gap-y-4 sm:mt-10 sm:gap-x-8 sm:gap-y-6">
               {[
                 ["No one else holds your keys", "Only the Chog holder can move money out. Not us, not anyone."],
                 ["Out in one tap", "“Take everything out” empties every vault into your wallet."],
@@ -41,22 +41,22 @@ export function NightShift() {
                 ["Tips are capped", "A harvester only ever gets a small slice. The rest stays in the Daemon."],
               ].map(([t, d], i) => (
                 <li key={t} data-reveal style={{ ["--d" as string]: `${i * 90}ms` }}>
-                  <div className="font-display text-lg font-bold">{t}</div>
-                  <p className="mt-1 text-sm leading-relaxed text-white/65">{d}</p>
+                  <div className="font-display text-sm font-bold leading-tight sm:text-lg">{t}</div>
+                  <p className="mt-1 text-xs leading-relaxed text-white/65 sm:text-sm">{d}</p>
                 </li>
               ))}
             </ul>
           </div>
 
           {/* calculator */}
-          <div className="rounded-[2.25rem] border border-white/12 bg-white/[0.06] p-6 backdrop-blur-xl sm:p-8" data-reveal style={{ ["--d" as string]: "140ms" }}>
-            <h3 className="font-display text-2xl font-bold">Harvest someone&apos;s Daemon</h3>
+          <div className="rounded-[1.5rem] border border-white/12 bg-white/[0.06] p-5 backdrop-blur-xl sm:rounded-[2.25rem] sm:p-8" data-reveal style={{ ["--d" as string]: "140ms" }}>
+            <h3 className="font-display text-xl font-bold sm:text-2xl">Harvest someone&apos;s Daemon</h3>
             <p className="mt-1 text-sm text-white/65">The longer a Daemon waits after it&apos;s ready, the bigger the tip.</p>
 
-            <label className="mt-7 block">
+            <label className="mt-5 block sm:mt-7">
               <div className="flex items-baseline justify-between text-sm">
                 <span className="text-white/75">Rewards waiting</span>
-                <span className="font-display text-xl font-bold tabular-nums">{fmt(harvest)} dUSD</span>
+                <span className="font-display text-lg font-bold tabular-nums sm:text-xl">{fmt(harvest)} dUSD</span>
               </div>
               <input
                 type="range"
@@ -70,10 +70,10 @@ export function NightShift() {
               />
             </label>
 
-            <label className="mt-6 block">
+            <label className="mt-4 block sm:mt-6">
               <div className="flex items-baseline justify-between text-sm">
                 <span className="text-white/75">Hours since it was ready</span>
-                <span className="font-display text-xl font-bold tabular-nums">{wait}h</span>
+                <span className="font-display text-lg font-bold tabular-nums sm:text-xl">{wait}h</span>
               </div>
               <input
                 type="range"
@@ -87,19 +87,19 @@ export function NightShift() {
               />
             </label>
 
-            <div className="mt-8 grid grid-cols-2 gap-3">
-              <div className="rounded-2xl bg-white/[0.08] p-4">
+            <div className="mt-5 grid grid-cols-2 gap-2.5 sm:mt-8 sm:gap-3">
+              <div className="rounded-2xl bg-white/[0.08] p-3 sm:p-4">
                 <div className="text-sm text-white/65">Your tip</div>
-                <div className="mt-1 font-display text-3xl font-extrabold tabular-nums text-[#ffb08a]">{fmt(tip)}</div>
+                <div className="mt-1 font-display text-2xl font-extrabold tabular-nums text-[#ffb08a] sm:text-3xl">{fmt(tip)}</div>
                 <div className="text-xs text-white/55">{share.toFixed(1)}% of the harvest</div>
               </div>
-              <div className="rounded-2xl bg-white/[0.08] p-4">
+              <div className="rounded-2xl bg-white/[0.08] p-3 sm:p-4">
                 <div className="text-sm text-white/65">Daemon keeps</div>
-                <div className="mt-1 font-display text-3xl font-extrabold tabular-nums text-[#7ff0c8]">{fmt(kept)}</div>
+                <div className="mt-1 font-display text-2xl font-extrabold tabular-nums text-[#7ff0c8] sm:text-3xl">{fmt(kept)}</div>
                 <div className="text-xs text-white/55">straight back to work</div>
               </div>
             </div>
-            <p className="mt-5 text-xs leading-relaxed text-white/55">
+            <p className="mt-4 text-xs leading-relaxed text-white/55 sm:mt-5">
               Tips start at {START}% and rise to {MAX}% over a day. The network fee is refunded from the harvest too.
             </p>
           </div>

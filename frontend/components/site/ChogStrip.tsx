@@ -16,7 +16,7 @@ function Tile({ id, i }: { id: number; i: number }) {
   const failed = gw >= sources.length;
   return (
     <div
-      className="sticker sticker-pop relative w-44 shrink-0 overflow-hidden p-2 sm:w-52"
+      className="sticker sticker-pop relative w-32 shrink-0 overflow-hidden p-1.5 sm:w-52 sm:p-2"
       style={{ transform: `rotate(${TILTS[i % TILTS.length]}deg)`, background: BACKS[i % BACKS.length] }}
     >
       <div className="relative aspect-square overflow-hidden rounded-xl bg-white/70">
@@ -39,9 +39,9 @@ function Tile({ id, i }: { id: number; i: number }) {
         )}
         {failed && <div className="h-full w-full bg-black/5" />}
       </div>
-      <div className="mt-2 flex items-center justify-between px-1 font-display text-lg">
+      <div className="mt-1.5 flex items-center justify-between px-1 font-display text-sm sm:mt-2 sm:text-lg">
         <span>#{id}</span>
-        <span className="text-xs font-sans font-bold text-[#1e1238]/60">gets a Daemon</span>
+        <span className="hidden text-xs font-sans font-bold text-[#1e1238]/60 sm:inline">gets a Daemon</span>
       </div>
     </div>
   );
@@ -50,14 +50,14 @@ function Tile({ id, i }: { id: number; i: number }) {
 export function ChogStrip() {
   const row = [...IDS, ...IDS];
   return (
-    <section aria-label="Real Chog artwork" className="relative overflow-hidden py-16 sm:py-24">
+    <section aria-label="Real Chog artwork" className="relative overflow-hidden py-12 sm:py-24">
       <div className="mx-auto max-w-6xl px-5 sm:px-8" data-reveal>
-        <h2 className="max-w-2xl font-display text-[clamp(2rem,4.6vw,3.4rem)] leading-[1.02]">Your real Chog. Its own little spirit.</h2>
-        <p className="mt-4 max-w-xl text-lg text-dim">
+        <h2 className="max-w-2xl font-display text-[clamp(1.85rem,7vw,3.4rem)] leading-[1.02]">Your real Chog. Its own little spirit.</h2>
+        <p className="mt-3 max-w-xl text-[15px] text-dim sm:mt-4 sm:text-lg">
           Daemon uses the real Chog Genesis artwork and traits. Every Chog you mint here is one of the originals, and it wakes up with a Daemon of its own.
         </p>
       </div>
-      <div className="mt-12 flex w-max animate-marquee gap-6 px-6 py-6 hover:[animation-play-state:paused]">
+      <div className="mt-6 flex w-max animate-marquee gap-4 px-4 py-4 sm:mt-12 sm:gap-6 sm:px-6 sm:py-6 hover:[animation-play-state:paused]">
         {row.map((id, i) => (
           <Tile key={`${id}-${i}`} id={id} i={i} />
         ))}

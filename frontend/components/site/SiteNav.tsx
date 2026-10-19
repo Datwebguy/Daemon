@@ -28,7 +28,7 @@ export function SiteNav() {
       <nav
         className={cx(
           "mx-auto flex max-w-6xl items-center gap-2 rounded-full px-3 py-2 transition-all duration-500 sm:px-4",
-          scrolled ? "glass shadow-[0_12px_40px_-20px_var(--clay-lo)]" : "bg-transparent",
+          scrolled ? "glass max-md:!bg-[var(--surface)] shadow-[0_12px_40px_-20px_var(--clay-lo)]" : "bg-transparent",
         )}
         aria-label="Main"
       >
@@ -42,7 +42,7 @@ export function SiteNav() {
             </li>
           ))}
         </ul>
-        <ThemeToggle compact className="ml-1" />
+        <ThemeToggle mini className="ml-1" />
         <Link
           href="/app"
           className="ml-1 hidden items-center gap-2 rounded-full bg-fg px-5 py-2.5 sm:inline-flex text-sm font-semibold text-bg transition hover:scale-[1.03] active:scale-[0.98]"
@@ -61,12 +61,15 @@ export function SiteNav() {
         </button>
       </nav>
       {open && (
-        <div className="glass mx-auto mt-2 max-w-6xl rounded-3xl p-3 md:hidden animate-pop">
+        <div className="glass mx-auto mt-2 max-w-6xl rounded-3xl !bg-[var(--surface)] p-3 md:hidden animate-pop">
           {LINKS.map((l) => (
             <a key={l.href} href={l.href} onClick={() => setOpen(false)} className="block rounded-2xl px-4 py-3 font-semibold hover:bg-surface/70">
               {l.label}
             </a>
           ))}
+          <Link href="/app" className="mt-2 block rounded-2xl bg-fg px-4 py-3 text-center font-semibold text-bg sm:hidden">
+            Open the app
+          </Link>
         </div>
       )}
     </header>

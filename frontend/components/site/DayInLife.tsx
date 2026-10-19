@@ -84,7 +84,7 @@ export function DayInLife() {
     <section id="day" className="relative scroll-mt-24 overflow-hidden py-0">
       <div className="grid lg:min-h-[44rem] lg:grid-cols-[1.05fr_1fr]">
         {/* left: the Chog, on a colour wall that bleeds off the edge */}
-        <div className="slash relative isolate overflow-hidden px-5 py-16 sm:px-10 lg:py-20 lg:pr-24">
+        <div className="slash relative isolate overflow-hidden px-5 py-10 sm:px-10 sm:py-16 lg:py-20 lg:pr-24">
           <div
             aria-hidden
             className="absolute inset-0 -z-10 transition-colors duration-700"
@@ -95,71 +95,71 @@ export function DayInLife() {
             <p className="sticker !bg-white px-3 py-1 text-xs font-bold uppercase tracking-wide" style={{ transform: "rotate(-3deg)" }}>
               Sample · plays by itself
             </p>
-            <div key={`${i}-bubble`} className="sticker animate-pop mt-6 max-w-xs px-5 py-3 text-center">
-              <span className="font-display text-xl leading-snug">“{m.lines[i % m.lines.length]}”</span>
+            <div key={`${i}-bubble`} className="sticker animate-pop mt-4 max-w-xs px-4 py-2 text-center sm:mt-6 sm:px-5 sm:py-3">
+              <span className="font-display text-base leading-snug sm:text-xl">“{m.lines[i % m.lines.length]}”</span>
             </div>
-            <div className="relative mt-8 w-[min(78vw,21rem)]" style={{ transform: "rotate(-3deg)" }}>
+            <div className="relative mt-6 w-[min(56vw,21rem)] sm:mt-8" style={{ transform: "rotate(-3deg)" }}>
               <ChogFace mood={b.mood} seed={i} boosted={b.boost > 1} className="aspect-square w-full" />
               {b.tip > 0 && (
-                <div key={`${i}-tip`} className="sticker animate-pop absolute -right-6 top-6 !bg-butter px-3 py-1.5 font-display text-lg">
+                <div key={`${i}-tip`} className="sticker animate-pop absolute -right-6 top-6 !bg-butter px-2.5 py-1 font-display text-sm sm:px-3 sm:py-1.5 sm:text-lg">
                   +{money(tip)} tip
                 </div>
               )}
               {b.boost > 1 && (
-                <div className="sticker animate-pop absolute -left-6 bottom-8 !bg-pink px-3 py-1.5 font-display text-lg">{boost.toFixed(2)}× boost</div>
+                <div className="sticker animate-pop absolute -left-6 bottom-8 !bg-pink px-2.5 py-1 font-display text-sm sm:px-3 sm:py-1.5 sm:text-lg">{boost.toFixed(2)}× boost</div>
               )}
             </div>
-            <p className="mt-8 text-center font-display text-3xl text-[#1e1238]">{m.name}</p>
+            <p className="mt-4 text-center font-display text-2xl text-[#1e1238] sm:mt-8 sm:text-3xl">{m.name}</p>
           </div>
         </div>
 
         {/* right: the day, as a tape of beats */}
-        <div className="relative bg-night px-5 py-16 text-white sm:px-10 lg:py-20 lg:pl-16">
-          <h2 className="font-display text-[clamp(2.2rem,4.6vw,3.6rem)] leading-[1.02]">A day with a Daemon.</h2>
-          <p className="mt-3 max-w-md text-lg text-white/70">This is what happens while you do something else. It&apos;s a looping sample, so there is nothing to press here.</p>
+        <div className="relative bg-night px-5 py-10 text-white sm:px-10 sm:py-16 lg:py-20 lg:pl-16">
+          <h2 className="font-display text-[clamp(1.85rem,7vw,3.6rem)] leading-[1.02]">A day with a Daemon.</h2>
+          <p className="mt-3 max-w-md text-[15px] text-white/70 sm:text-lg">This is what happens while you do something else. It&apos;s a looping sample, so there is nothing to press here.</p>
 
-          <ol className="mt-10 space-y-3">
+          <ol className="mt-6 space-y-2 sm:mt-10 sm:space-y-3">
             {BEATS.map((x, k) => {
               const on = k === i;
               return (
                 <li
                   key={x.title}
                   className={cx(
-                    "grid grid-cols-[5.5rem_1fr] items-center gap-4 rounded-2xl border-2 px-4 py-3 transition-all duration-500",
+                    "grid grid-cols-[4.75rem_1fr] items-center gap-3 rounded-xl border-2 px-3 py-2 transition-all duration-500 sm:grid-cols-[5.5rem_1fr] sm:gap-4 sm:rounded-2xl sm:px-4 sm:py-3",
                     on ? "scale-[1.02] border-butter bg-white/10" : "border-white/10 opacity-50",
                   )}
                   aria-current={on ? "step" : undefined}
                 >
-                  <span className={cx("font-display text-sm", on ? "text-butter" : "text-white/60")}>{x.when}</span>
+                  <span className={cx("font-display text-xs sm:text-sm", on ? "text-butter" : "text-white/60")}>{x.when}</span>
                   <span>
-                    <span className="block font-display text-xl leading-tight">{x.title}</span>
-                    <span className={cx("block text-sm text-white/70 transition-all", on ? "mt-1 max-h-12 opacity-100" : "max-h-0 overflow-hidden opacity-0")}>{x.line}</span>
+                    <span className="block font-display text-[15px] leading-tight sm:text-xl">{x.title}</span>
+                    <span className={cx("block text-xs text-white/70 sm:text-sm transition-all", on ? "mt-1 max-h-12 opacity-100" : "max-h-0 overflow-hidden opacity-0")}>{x.line}</span>
                   </span>
                 </li>
               );
             })}
           </ol>
 
-          <dl className="mt-8 grid grid-cols-3 border-y-2 border-white/15 py-4 text-center">
+          <dl className="mt-6 grid grid-cols-3 border-y-2 border-white/15 py-3 text-center sm:mt-8 sm:py-4">
             <div>
               <dt className="text-xs text-white/60">Saved</dt>
-              <dd className="font-display text-2xl tabular-nums">{money(saved)}</dd>
+              <dd className="font-display text-lg tabular-nums sm:text-2xl">{money(saved)}</dd>
             </div>
             <div className="border-x-2 border-white/15">
               <dt className="text-xs text-white/60">Earned so far</dt>
-              <dd className="font-display text-2xl tabular-nums text-mint">+{money(earned)}</dd>
+              <dd className="font-display text-lg tabular-nums text-mint sm:text-2xl">+{money(earned)}</dd>
             </div>
             <div>
               <dt className="text-xs text-white/60">Boost</dt>
-              <dd className="font-display text-2xl tabular-nums text-pink">{boost.toFixed(2)}×</dd>
+              <dd className="font-display text-lg tabular-nums text-pink sm:text-2xl">{boost.toFixed(2)}×</dd>
             </div>
           </dl>
 
-          <div className="mt-8 flex flex-wrap items-center gap-4">
-            <Link href="/app" className="sticker sticker-pop squish !bg-butter px-7 py-3.5 font-bold">
+          <div className="mt-6 flex flex-wrap items-center gap-3 sm:mt-8 sm:gap-4">
+            <Link href="/app" className="sticker sticker-pop squish !bg-butter px-5 py-2.5 text-sm font-bold sm:px-7 sm:py-3.5 sm:text-base">
               Do this for real
             </Link>
-            <p className="text-sm text-white/60">The sample uses pretend numbers.</p>
+            <p className="text-xs text-white/60 sm:text-sm">The sample uses pretend numbers.</p>
           </div>
         </div>
       </div>

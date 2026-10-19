@@ -45,9 +45,9 @@ export function DeployPanel({
     );
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-6 py-6 text-center lg:py-10">
+    <div className="flex flex-1 flex-col items-center justify-center gap-5 py-4 text-center sm:gap-6 sm:py-6 lg:py-10">
       <div className="relative">
-        <div className="sticker h-40 w-40 rotate-3 !rounded-[1.8rem] !border-4 p-2 !shadow-[7px_7px_0_var(--st-shadow)] sm:h-48 sm:w-48">
+        <div className="sticker h-32 w-32 rotate-3 !rounded-[1.8rem] !border-4 p-2 !shadow-[7px_7px_0_var(--st-shadow)] sm:h-48 sm:w-48">
           <ChogFace seed={1} className="h-full w-full" />
         </div>
         {[
@@ -66,8 +66,8 @@ export function DeployPanel({
         ))}
       </div>
 
-      <div className="sticker max-w-md -rotate-1 !rounded-[1.4rem] !border-4 px-6 py-5 !shadow-[6px_6px_0_var(--st-shadow)]">
-        <h2 className="font-display text-4xl leading-none">Still asleep</h2>
+      <div className="sticker max-w-md -rotate-1 !rounded-[1.4rem] !border-4 px-5 py-4 !shadow-[6px_6px_0_var(--st-shadow)] sm:px-6 sm:py-5">
+        <h2 className="font-display text-3xl leading-none sm:text-4xl">Still asleep</h2>
         <p className="mt-3 text-dim">
           {isOwner
             ? "Wake your Daemon to give this Chog its own wallet. It stays yours, and it only takes one tap."

@@ -39,11 +39,11 @@ const QA: { q: string; a: string }[] = [
 
 export function Faq() {
   return (
-    <section id="faq" className="mx-auto max-w-6xl scroll-mt-24 px-5 py-24 sm:px-8 sm:py-32">
-      <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
+    <section id="faq" className="mx-auto max-w-6xl scroll-mt-24 px-5 py-14 sm:px-8 sm:py-32">
+      <div className="grid gap-6 sm:gap-12 lg:grid-cols-[0.8fr_1.2fr]">
         <div data-reveal className="lg:sticky lg:top-28 lg:self-start">
-          <h2 className="font-display text-[clamp(2.2rem,5vw,3.6rem)] font-extrabold leading-[0.98] tracking-tight">Questions, answered.</h2>
-          <p className="mt-5 max-w-sm text-lg text-dim">
+          <h2 className="font-display text-[clamp(1.85rem,7vw,3.6rem)] font-extrabold leading-[1] tracking-tight">Questions, answered.</h2>
+          <p className="mt-3 max-w-sm text-[15px] text-dim sm:mt-5 sm:text-lg">
             Still curious? Ask the Chog community on{" "}
             <a href="https://discord.gg/chog" target="_blank" rel="noreferrer" className="font-semibold text-jelly underline-offset-4 hover:underline">
               Discord
@@ -51,18 +51,18 @@ export function Faq() {
             .
           </p>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           {QA.map((x, i) => (
-            <details key={x.q} className="sticker sticker-pop group !rounded-2xl px-6 py-5" data-reveal style={{ ["--d" as string]: `${i * 40}ms` }}>
-              <summary className="flex cursor-pointer items-center justify-between gap-6 font-display text-lg font-bold">
+            <details key={x.q} className="sticker sticker-pop group !rounded-2xl px-4 py-3 sm:px-6 sm:py-5" data-reveal style={{ ["--d" as string]: `${i * 40}ms` }}>
+              <summary className="flex cursor-pointer items-center justify-between gap-4 font-display text-[15px] font-bold leading-snug sm:gap-6 sm:text-lg">
                 {x.q}
-                <span className="faq-icon grid h-9 w-9 shrink-0 place-items-center rounded-full bg-butter text-[#1e1238] transition-transform duration-300" aria-hidden>
+                <span className="faq-icon grid h-7 w-7 shrink-0 sm:h-9 sm:w-9 place-items-center rounded-full bg-butter text-[#1e1238] transition-transform duration-300" aria-hidden>
                   <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
                     <path d="M12 5v14M5 12h14" />
                   </svg>
                 </span>
               </summary>
-              <p className="faq-body mt-3 max-w-[62ch] leading-relaxed text-dim">{x.a}</p>
+              <p className="faq-body mt-2 max-w-[62ch] text-sm leading-relaxed text-dim sm:mt-3 sm:text-base">{x.a}</p>
             </details>
           ))}
         </div>

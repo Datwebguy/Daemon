@@ -3,53 +3,53 @@ import { ChogFace } from "@/components/ChogFace";
 /** "What is a Daemon?" An annotated drawing instead of three identical cards. */
 export function Anatomy() {
   return (
-    <section className="mx-auto max-w-6xl px-5 py-24 sm:px-8 sm:py-32">
-      <div className="grid items-center gap-14 lg:grid-cols-[0.9fr_1.1fr]">
+    <section className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-32">
+      <div className="grid items-center gap-8 sm:gap-14 lg:grid-cols-[0.9fr_1.1fr]">
         <div data-reveal>
-          <h2 className="font-display text-[clamp(2.2rem,5vw,3.6rem)] font-extrabold leading-[0.98] tracking-tight">
+          <h2 className="font-display text-[clamp(1.85rem,7vw,3.6rem)] font-extrabold leading-[1] tracking-tight">
             A wallet with a heartbeat.
           </h2>
-          <p className="mt-6 max-w-md text-lg leading-relaxed text-dim">
+          <p className="mt-4 max-w-md text-[15px] leading-relaxed text-dim sm:mt-6 sm:text-lg">
             A Daemon is a wallet that belongs to your Chog itself, not to an app and not to us. You fill it, it earns, and it lets you know
             how it feels about it.
           </p>
-          <p className="mt-4 max-w-md text-lg leading-relaxed text-dim">
+          <p className="mt-3 max-w-md text-[15px] leading-relaxed text-dim sm:mt-4 sm:text-lg">
             Whoever holds the Chog holds the Daemon. If you sell the Chog, the savings, the history and the attitude all go with it.
           </p>
         </div>
 
         <div className="relative" data-reveal style={{ ["--d" as string]: "120ms" }}>
-          <div className="sticker relative overflow-hidden !rounded-[2rem] p-6 sm:p-10">
+          <div className="sticker relative overflow-hidden !rounded-[1.5rem] p-4 sm:!rounded-[2rem] sm:p-10">
             <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-6">
               {/* chog */}
               <div className="text-center">
-                <div className="clay-sunk mx-auto grid aspect-square w-full max-w-[9rem] place-items-center rounded-[1.6rem]">
+                <div className="clay-sunk mx-auto grid aspect-square w-full max-w-[6.5rem] place-items-center rounded-[1.2rem] sm:max-w-[9rem] sm:rounded-[1.6rem]">
                   <ChogFace mood={1} className="h-[78%] w-[78%]" />
                 </div>
-                <div className="mt-3 font-display font-bold">Your Chog</div>
-                <div className="text-xs text-dim">the collectible you hold</div>
+                <div className="mt-2 font-display text-sm font-bold sm:mt-3 sm:text-base">Your Chog</div>
+                <div className="text-[11px] leading-snug text-dim sm:text-xs">the collectible you hold</div>
               </div>
               <Flow />
               {/* wallet */}
               <div className="text-center">
-                <div className="mx-auto grid aspect-square w-full max-w-[9rem] place-items-center rounded-[1.6rem] bg-jelly text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.35),0_18px_40px_-16px_var(--glow)]">
-                  <svg viewBox="0 0 48 48" className="h-14 w-14" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinejoin="round">
+                <div className="mx-auto grid aspect-square w-full max-w-[6.5rem] place-items-center rounded-[1.2rem] bg-jelly sm:max-w-[9rem] sm:rounded-[1.6rem] text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.35),0_18px_40px_-16px_var(--glow)]">
+                  <svg viewBox="0 0 48 48" className="h-10 w-10 sm:h-14 sm:w-14" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinejoin="round">
                     <rect x="6" y="12" width="36" height="26" rx="7" />
                     <path d="M30 22h12v8H30a4 4 0 0 1 0-8Z" />
                     <path d="M12 12l16-6 4 6" />
                   </svg>
                 </div>
-                <div className="mt-3 font-display font-bold">Its Daemon</div>
-                <div className="text-xs text-dim">a wallet that belongs to the Chog</div>
+                <div className="mt-2 font-display text-sm font-bold sm:mt-3 sm:text-base">Its Daemon</div>
+                <div className="text-[11px] leading-snug text-dim sm:text-xs">a wallet that belongs to the Chog</div>
               </div>
             </div>
 
-            <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="mt-5 grid grid-cols-2 gap-2.5 sm:mt-8 sm:gap-4">
               <Vault name="Stable vault" note="Calm, steady rewards" tone="#12a57a" icon="M8 26 C14 18 20 22 26 16 S36 10 40 10" />
               <Vault name="Degen vault" note="Bigger swings, more fun" tone="#ff7a45" icon="M8 30 L14 14 L20 26 L27 8 L33 22 L40 12" />
             </div>
 
-            <ul className="mt-8 space-y-3 text-sm">
+            <ul className="mt-5 space-y-2.5 text-[13px] sm:mt-8 sm:space-y-3 sm:text-sm">
               {[
                 "Only the Chog holder can take money out",
                 "Anyone can help it grow, and gets a small tip for it",
@@ -83,12 +83,12 @@ function Flow() {
 
 function Vault({ name, note, tone, icon }: { name: string; note: string; tone: string; icon: string }) {
   return (
-    <div className="clay-sunk rounded-2xl p-4">
+    <div className="clay-sunk rounded-2xl p-3 sm:p-4">
       <svg viewBox="0 0 48 40" className="h-8 w-10" fill="none" stroke={tone} strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <path d={icon} />
       </svg>
-      <div className="mt-2 font-display font-bold">{name}</div>
-      <div className="text-xs text-dim">{note}</div>
+      <div className="mt-1.5 font-display text-sm font-bold sm:mt-2 sm:text-base">{name}</div>
+      <div className="text-[11px] text-dim sm:text-xs">{note}</div>
     </div>
   );
 }

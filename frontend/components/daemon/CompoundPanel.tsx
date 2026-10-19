@@ -59,17 +59,17 @@ export function CompoundPanel({ ctx }: { ctx: DaemonCtx }) {
     );
 
   return (
-    <div className="space-y-6">
-      <div className="grid items-center gap-6 @lg:grid-cols-[auto_1fr]">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="grid items-center gap-4 sm:gap-6 @lg:grid-cols-[auto_1fr]">
         <Dial progress={restProgress} tip={tipMeter} resting={resting} label={resting ? fmtDuration(remaining ?? 0) : "Ready"} />
 
         <div className="min-w-0 text-center @lg:text-left">
           <div className="text-xs font-extrabold uppercase tracking-wider text-dim">Rewards waiting</div>
-          <div className="font-display text-[clamp(2rem,9cqi,3.2rem)] leading-none tabular-nums">
+          <div className="font-display text-[clamp(1.6rem,8cqi,3.2rem)] leading-none tabular-nums">
             {fmtUnits(state.pendingProfit, dec)} <span className="text-[0.55em] text-dim">{sym}</span>
           </div>
 
-          <div className="mt-3 space-y-2 text-sm">
+          <div className="mt-2.5 space-y-1.5 text-[13px] sm:mt-3 sm:space-y-2 sm:text-sm">
             <p>
               {resting ? (
                 <span className="text-dim">Resting. It can be harvested again when the timer ends.</span>
@@ -126,7 +126,7 @@ function Dial({ progress, tip, resting, label }: { progress: number; tip: number
   const c2 = 2 * Math.PI * R2;
   return (
     <div
-      className="sticker relative mx-auto aspect-square w-60 max-w-full !rounded-full !border-4 !shadow-[6px_6px_0_var(--st-shadow)]"
+      className="sticker relative mx-auto aspect-square w-44 max-w-full !rounded-full !border-[3px] sm:w-60 sm:!border-4 !shadow-[6px_6px_0_var(--st-shadow)]"
       role="img"
       aria-label={`${resting ? `Resting, ${label} left` : "Ready to harvest"}. The tip is ${Math.round(tip * 100)} percent of the way to its maximum.`}
     >
@@ -180,7 +180,7 @@ function Dial({ progress, tip, resting, label }: { progress: number; tip: number
       </svg>
       <div className="absolute inset-0 grid place-items-center text-center">
         <div>
-          <div className="font-display text-[clamp(1.5rem,6vw,2.1rem)] leading-none tabular-nums">{label}</div>
+          <div className="font-display text-[1.35rem] leading-none tabular-nums sm:text-[2.1rem]">{label}</div>
           <div className="mt-1 text-[10px] font-extrabold uppercase tracking-widest text-dim">{resting ? "until harvest" : "go for it"}</div>
         </div>
       </div>

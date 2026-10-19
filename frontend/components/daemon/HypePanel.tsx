@@ -139,7 +139,7 @@ export function HypePanel({ ctx }: { ctx: DaemonCtx }) {
   const busy = pending !== null && (pending === "Hype" || pending.startsWith("Allow"));
 
   return (
-    <div className="grid gap-6 @lg:grid-cols-[auto_1fr]">
+    <div className="grid gap-4 sm:gap-6 @lg:grid-cols-[auto_1fr]">
       {/* gauges: the boost thermometer and the hype jar */}
       <div className="flex items-end justify-center gap-3 @lg:self-center">
         <Thermometer fill={fill} mult={mult} maxMult={maxMult} />
@@ -150,7 +150,7 @@ export function HypePanel({ ctx }: { ctx: DaemonCtx }) {
         <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
           <div>
             <div className="text-xs font-extrabold uppercase tracking-wider text-dim">Boost</div>
-            <div className="font-display text-5xl leading-none tabular-nums text-[color:var(--c-pink)]">x{mult.toFixed(2)}</div>
+            <div className="font-display text-4xl leading-none tabular-nums text-[color:var(--c-pink)] sm:text-5xl">x{mult.toFixed(2)}</div>
           </div>
           <div className="text-right text-xs font-bold text-dim">
             <div>{active ? `Ends in ${fmtDuration(expiresAt - now)}` : "No boost right now"}</div>
@@ -276,7 +276,7 @@ function Thermometer({ fill, mult, maxMult }: { fill: number; mult: number; maxM
   ];
   return (
     <figure className="m-0 text-center">
-      <svg viewBox="0 0 124 200" className="h-48 w-[7.6rem]" role="img" aria-label={`Boost thermometer, x${mult.toFixed(2)} of a maximum x${maxMult.toFixed(2)}`}>
+      <svg viewBox="0 0 124 200" className="h-36 w-[5.7rem] sm:h-48 sm:w-[7.6rem]" role="img" aria-label={`Boost thermometer, x${mult.toFixed(2)} of a maximum x${maxMult.toFixed(2)}`}>
         <rect x="19" y="6" width="20" height="160" rx="10" fill="var(--surface-2)" stroke="var(--st-line)" strokeWidth="4" />
         <circle cx="29" cy="172" r="22" fill="var(--surface-2)" stroke="var(--st-line)" strokeWidth="4" />
         {/* the filled part grows up from the bulb */}
@@ -323,7 +323,7 @@ const JAR_SLOTS: [number, number][] = [
 function Jar({ coins }: { coins: number }) {
   return (
     <figure className="m-0 text-center">
-      <svg viewBox="0 0 112 150" className="h-36 w-[6.6rem]" role="img" aria-label={coins > 0 ? "A hype jar with coins in it" : "An empty hype jar"}>
+      <svg viewBox="0 0 112 150" className="h-28 w-[5.1rem] sm:h-36 sm:w-[6.6rem]" role="img" aria-label={coins > 0 ? "A hype jar with coins in it" : "An empty hype jar"}>
         <path
           d="M26 24h60v10c14 8 20 20 20 36v52c0 14-8 24-22 24H28c-14 0-22-10-22-24V70c0-16 6-28 20-36z"
           fill="color-mix(in oklab, var(--st-bg) 78%, var(--sky))"
