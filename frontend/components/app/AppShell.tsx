@@ -249,9 +249,14 @@ function Supplies() {
         <span className="text-xs font-bold text-dim">Theme</span>
         <ThemeToggle iconOnly className="!h-11" />
       </div>
-      <Link href="/" className="text-center text-xs font-semibold text-dim underline-offset-4 hover:text-fg hover:underline">
-        About Daemon
-      </Link>
+      <div className="flex flex-col items-center gap-1">
+        <Link href="/guide" className="text-center text-xs font-semibold text-dim underline-offset-4 hover:text-fg hover:underline">
+          Testing guide
+        </Link>
+        <Link href="/" className="text-center text-xs font-semibold text-dim underline-offset-4 hover:text-fg hover:underline">
+          About Daemon
+        </Link>
+      </div>
     </div>
   );
 }

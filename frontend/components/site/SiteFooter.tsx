@@ -11,6 +11,7 @@ const COLS: { title: string; links: FooterLink[] }[] = [
     links: [
       { href: "/app", label: "Open the app" },
       { href: "/practice", label: "Practice mode" },
+      { href: "/guide", label: "Testing guide" },
       { href: "/explore", label: "Find a Daemon" },
       { href: "/feed", label: "Live activity" },
     ],

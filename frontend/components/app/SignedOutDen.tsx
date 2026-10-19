@@ -59,7 +59,12 @@ export function SignedOutDen() {
                     Try practice mode
                   </Link>
                 </div>
-                <p className="mt-3 text-xs text-dim">Test network only. Nothing here costs real money.</p>
+                <p className="mt-3 text-xs text-dim">
+                  Test network only. Nothing here costs real money. Judging?{" "}
+                  <Link href="/guide" className="font-bold text-jelly underline-offset-4 hover:underline">
+                    Testing guide
+                  </Link>
+                </p>
               </>
             ) : (
               <>
