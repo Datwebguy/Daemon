@@ -39,6 +39,8 @@ abstract contract DaemonDeploy {
         uint256 dripAmount; // MON gifted once to each new, empty wallet
         uint256 dripDailyLimit; // max welcome gifts per UTC day
         uint256 dripFunding; // MON the deployer puts into the drip at deploy
+        address dripRelayer; // the only address that may trigger a welcome gift (the app's server wallet)
+        uint256 relayerGas; // MON sent to the relayer for gas (0 if the relayer is the deployer)
     }
 
     struct Deployment {
@@ -72,7 +74,9 @@ abstract contract DaemonDeploy {
             // A first visit (mint, wake, deposit, hype, harvest) costs about 0.3 MON at ~100 gwei on testnet.
             dripAmount: 0.5 ether,
             dripDailyLimit: 50,
-            dripFunding: 5 ether
+            dripFunding: 5 ether,
+            dripRelayer: deployer, // real deploys set DRIP_RELAYER
+            relayerGas: 0.2 ether
         });
     }
 
@@ -163,10 +167,15 @@ abstract contract DaemonDeploy {
         d.hub = new DaemonHub();
 
         // welcome MON for first-time wallets (the app's relayer pays the claim gas)
-        d.drip = new WelcomeDrip(p.dripAmount, p.dripDailyLimit, p.deployer);
+        address relayer = p.dripRelayer == address(0) ? p.deployer : p.dripRelayer;
+        d.drip = new WelcomeDrip(p.dripAmount, p.dripDailyLimit, p.deployer, relayer);
         if (p.dripFunding > 0) {
             (bool ok,) = address(d.drip).call{value: p.dripFunding}("");
             require(ok, "drip funding failed");
+        }
+        if (relayer != p.deployer && p.relayerGas > 0) {
+            (bool ok,) = relayer.call{value: p.relayerGas}("");
+            require(ok, "relayer gas funding failed");
         }
     }
 

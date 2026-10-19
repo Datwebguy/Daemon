@@ -6360,6 +6360,11 @@ export const welcomeDripAbi = [
         "name": "funder_",
         "type": "address",
         "internalType": "address"
+      },
+      {
+        "name": "relayer_",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "stateMutability": "nonpayable"
@@ -6467,6 +6472,32 @@ export const welcomeDripAbi = [
   },
   {
     "type": "function",
+    "name": "relayer",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "setRelayer",
+    "inputs": [
+      {
+        "name": "relayer_",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "status",
     "inputs": [
       {
@@ -6537,6 +6568,19 @@ export const welcomeDripAbi = [
   },
   {
     "type": "event",
+    "name": "RelayerChanged",
+    "inputs": [
+      {
+        "name": "relayer",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "Withdrawn",
     "inputs": [
       {
@@ -6584,6 +6628,11 @@ export const welcomeDripAbi = [
         "internalType": "uint256"
       }
     ]
+  },
+  {
+    "type": "error",
+    "name": "NotRelayer",
+    "inputs": []
   },
   {
     "type": "error",

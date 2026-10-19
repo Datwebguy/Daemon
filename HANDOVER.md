@@ -35,7 +35,7 @@ NEXT_PUBLIC_PRIVY_APP_ID=...
 NEXT_PUBLIC_INDEXER_URL=...
 ```
 
-   Server-only secret (Vercel env, never `NEXT_PUBLIC_`): `DRIP_RELAYER_KEY` = the key of a wallet holding ~0.1 MON that only pays the claim gas for the welcome gift. Leave it and `NEXT_PUBLIC_WELCOME_DRIP` empty to turn the gift off.
+   Server-only secret (Vercel env, never `NEXT_PUBLIC_`): `DRIP_RELAYER_KEY` = the key of a wallet holding ~0.2 MON that only pays the claim gas for the welcome gift. Deploy with `DRIP_RELAYER=<that wallet's address>` (the script sends it 0.2 MON for gas); only that address can trigger gifts, and the funder can replace it with `setRelayer` if the key leaks. Leave `DRIP_RELAYER_KEY` and `NEXT_PUBLIC_WELCOME_DRIP` empty to turn the gift off.
 8. `npm run build` and deploy frontend (Vercel project root directory: `frontend`)
 
 ## Rehearse Locally First (recommended)

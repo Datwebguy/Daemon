@@ -25,12 +25,12 @@ contract ReenterDrip {
 contract WelcomeDripTest is Test {
     WelcomeDrip drip;
     address funder = makeAddr("funder");
-    address relayer = makeAddr("relayer");
+    address relayer = address(this); // the test contract plays the app's relayer
     address newbie = makeAddr("newbie");
 
     function setUp() public {
         vm.warp(1_700_000_000);
-        drip = new WelcomeDrip(0.3 ether, 3, funder);
+        drip = new WelcomeDrip(0.3 ether, 3, funder, relayer);
         vm.deal(address(this), 10 ether);
         (bool ok,) = address(drip).call{value: 3 ether}("");
         assertTrue(ok);
@@ -38,21 +38,52 @@ contract WelcomeDripTest is Test {
 
     function test_constructorValidates() public {
         vm.expectRevert(WelcomeDrip.ZeroAddress.selector);
-        new WelcomeDrip(1, 1, address(0));
+        new WelcomeDrip(1, 1, address(0), relayer);
+        vm.expectRevert(WelcomeDrip.ZeroAddress.selector);
+        new WelcomeDrip(1, 1, funder, address(0));
         vm.expectRevert(WelcomeDrip.InvalidConfig.selector);
-        new WelcomeDrip(0, 1, funder);
+        new WelcomeDrip(0, 1, funder, relayer);
         vm.expectRevert(WelcomeDrip.InvalidConfig.selector);
-        new WelcomeDrip(1, 0, funder);
+        new WelcomeDrip(1, 0, funder, relayer);
+    }
+
+    function test_onlyTheRelayerCanClaim() public {
+        // a bot calling the contract directly gets nothing, however many fresh wallets it invents
+        address bot = makeAddr("bot");
+        vm.prank(bot);
+        vm.expectRevert(WelcomeDrip.NotRelayer.selector);
+        drip.claimFor(makeAddr("sybil1"));
+        vm.prank(funder); // even the funder is not the relayer
+        vm.expectRevert(WelcomeDrip.NotRelayer.selector);
+        drip.claimFor(makeAddr("sybil2"));
+        assertEq(address(drip).balance, 3 ether);
+    }
+
+    function test_funderCanReplaceTheRelayer() public {
+        address fresh = makeAddr("freshRelayer");
+        vm.expectRevert(WelcomeDrip.NotFunder.selector); // the relayer cannot replace itself
+        drip.setRelayer(fresh);
+        vm.prank(funder);
+        vm.expectRevert(WelcomeDrip.ZeroAddress.selector);
+        drip.setRelayer(address(0));
+
+        vm.prank(funder);
+        drip.setRelayer(fresh);
+        vm.expectRevert(WelcomeDrip.NotRelayer.selector); // the old, possibly leaked key stops working
+        drip.claimFor(newbie);
+        vm.prank(fresh);
+        drip.claimFor(newbie);
+        assertEq(newbie.balance, 0.3 ether);
     }
 
     function test_relayerClaimsForEmptyWallet() public {
         assertEq(drip.status(newbie), "");
         vm.expectEmit(true, false, false, true, address(drip));
         emit WelcomeDrip.Dripped(newbie, 0.3 ether);
-        vm.prank(relayer);
+        uint256 relayerBefore = relayer.balance;
         drip.claimFor(newbie);
         assertEq(newbie.balance, 0.3 ether);
-        assertEq(relayer.balance, 0, "the relayer only pays gas, it never receives MON");
+        assertEq(relayer.balance, relayerBefore, "the relayer only pays gas, it never receives MON");
         assertTrue(drip.claimed(newbie));
         assertEq(drip.status(newbie), "already claimed");
     }
@@ -112,10 +143,15 @@ contract WelcomeDripTest is Test {
     }
 
     function test_noReentrancy() public {
+        // the relayer itself re-enters while receiving its claim: the guard stops the nested call, so the send fails
         ReenterDrip r = new ReenterDrip(drip);
-        vm.expectRevert(WelcomeDrip.TransferFailed.selector); // the nested claim reverts, so the send fails
+        vm.prank(funder);
+        drip.setRelayer(address(r));
+        vm.prank(address(r));
+        vm.expectRevert(WelcomeDrip.TransferFailed.selector);
         drip.claimFor(address(r));
         assertEq(address(drip).balance, 3 ether);
+        assertFalse(drip.claimed(address(r)));
     }
 
     function test_zeroAddress() public {

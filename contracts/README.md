@@ -15,6 +15,7 @@ node script/export-abis.mjs      # regenerate frontend + keeper ABIs
 | `src/interfaces/` | Shared interfaces (IDaemonAccount, IYieldSource, IStrategyRegistry, IDaemonRouter, IChog, IERC6551) |
 | `src/account/` | `DaemonAccount`: the ERC-6551 account (compound, hype, sweep, mood) |
 | `src/DaemonHub.sol` | Stateless batch compounding |
+| `src/WelcomeDrip.sol` | One-time MON gift for new wallets (relayer-only, capped) |
 | `src/yield/` | `RewardVault` (Stable), `DegenVault`, `StrategyRegistry`, `MockRouter`, `MockOracle` |
 | `src/chog/` | `MockChog` (mint, traits, on-chain living image), `ChogArt`, `ChogText`, `TraitPolicy` |
 | `src/mocks/` | Test tokens (`MockERC20`, `MockWMON`) |
