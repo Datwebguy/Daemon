@@ -309,6 +309,8 @@ export function useDaemonSummary(account: Address | undefined, enabled: boolean)
       { ...base, functionName: "getMood" },
       { ...base, functionName: "getBoost" },
       { ...base, functionName: "totalAssets" },
+      { ...base, functionName: "nextCompoundAt" },
+      { ...base, functionName: "pendingProfit" },
     ],
     query: { enabled: enabled && Boolean(account), refetchInterval: BACKGROUND, staleTime: 30_000 },
   });
@@ -317,6 +319,8 @@ export function useDaemonSummary(account: Address | undefined, enabled: boolean)
     mood: r.data?.[0]?.result,
     boostExpiresAt: boost ? boost[1] : undefined,
     totalAssets: r.data?.[2]?.result,
+    nextCompoundAt: r.data?.[3]?.result,
+    pendingProfit: r.data?.[4]?.result,
     isLoading: r.isLoading,
   };
 }

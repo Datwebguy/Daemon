@@ -71,6 +71,13 @@ export function ShareButton({ ctx, images }: { ctx: DaemonCtx; images?: readonly
 /** The saved picture always uses fixed colours, so it looks the same whatever theme you are in. */
 const INK = "#1e1238";
 
+/** A ready-to-post X link: what the Daemon is doing, plus a link anyone can open to hype it. */
+function xPostUrl(tokenId: bigint, mood: string | undefined, yieldLine: string): string {
+  const link = typeof window !== "undefined" ? `${window.location.origin}/daemon/${tokenId.toString()}` : "";
+  const text = `My Chog #${tokenId.toString()} is feeling ${mood ? mood.toLowerCase() : "sleepy"} and its Daemon is working while I'm not. ${yieldLine}. Come hype it:`;
+  return `https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(link)}`;
+}
+
 function ShareCard({ ctx, images }: { ctx: DaemonCtx; images?: readonly string[] }) {
   const { tokenId, account, deployed, state, protocol } = ctx;
   const ref = useRef<HTMLDivElement>(null);
@@ -149,9 +156,15 @@ function ShareCard({ ctx, images }: { ctx: DaemonCtx; images?: readonly string[]
           </div>
         </div>
       </div>
-      <StickerButton tone="jelly" size="lg" className="mt-5 w-full" onClick={download} loading={busy}>
-        Save image
-      </StickerButton>
+      <div className="mt-4 grid gap-3 sm:mt-5 sm:grid-cols-2">
+        <StickerButton tone="jelly" size="lg" className="w-full" onClick={download} loading={busy}>
+          Save image
+        </StickerButton>
+        <a href={xPostUrl(tokenId, m?.name, yieldLine)} target="_blank" rel="noreferrer" className="dm-btn dm-btn-lg dm-t-butter w-full font-display">
+          Post on X
+        </a>
+      </div>
+      <p className="mt-2 text-center text-xs text-dim">Save the picture first and attach it to your post.</p>
     </div>
   );
 }
