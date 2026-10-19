@@ -13,6 +13,7 @@ import {DaemonAccount} from "../src/account/DaemonAccount.sol";
 import {DaemonHub} from "../src/DaemonHub.sol";
 import {MockChog} from "../src/chog/MockChog.sol";
 import {TraitPolicy} from "../src/chog/TraitPolicy.sol";
+import {WelcomeDrip} from "../src/WelcomeDrip.sol";
 
 /// @notice Shared deployment logic for the Monad testnet script and the integration tests.
 /// The caller is responsible for broadcasting (script) or pranking (tests) as `deployer`.
@@ -31,6 +32,9 @@ abstract contract DaemonDeploy {
         uint256 degenRewards; // DMNR streamed by DegenVault
         uint256 rewardDuration; // seconds the reward budget is meant to last
         uint256 sourceCap; // max dUSD per Daemon per vault
+        uint256 dripAmount; // MON gifted once to each new, empty wallet
+        uint256 dripDailyLimit; // max welcome gifts per UTC day
+        uint256 dripFunding; // MON the deployer puts into the drip at deploy
     }
 
     struct Deployment {
@@ -47,6 +51,7 @@ abstract contract DaemonDeploy {
         DaemonAccount implementation;
         MockChog chog;
         DaemonHub hub;
+        WelcomeDrip drip;
     }
 
     function _defaultParams(address deployer) internal pure returns (Params memory) {
@@ -58,7 +63,11 @@ abstract contract DaemonDeploy {
             stableRewards: 1_000e18,
             degenRewards: 3_000e18,
             rewardDuration: 30 days,
-            sourceCap: 1_000_000e18
+            sourceCap: 1_000_000e18,
+            // A first visit (mint, wake, deposit, hype, harvest) costs about 0.3 MON at ~100 gwei on testnet.
+            dripAmount: 0.5 ether,
+            dripDailyLimit: 50,
+            dripFunding: 5 ether
         });
     }
 
@@ -140,6 +149,13 @@ abstract contract DaemonDeploy {
         d.chog = new MockChog(3, 10_000);
         d.chog.setDaemon(ERC6551_REGISTRY, address(d.implementation), DAEMON_SALT);
         d.hub = new DaemonHub();
+
+        // welcome MON for first-time wallets (the app's relayer pays the claim gas)
+        d.drip = new WelcomeDrip(p.dripAmount, p.dripDailyLimit, p.deployer);
+        if (p.dripFunding > 0) {
+            (bool ok,) = address(d.drip).call{value: p.dripFunding}("");
+            require(ok, "drip funding failed");
+        }
     }
 
     function _seedPool(Deployment memory d, address deployer, address token, uint256 tokenAmount, uint256 dusdAmount)

@@ -13,4 +13,5 @@ export {
   erc20Abi,
   priceOracleAbi,
   routerAbi,
+  welcomeDripAbi,
 } from "./abis.generated";

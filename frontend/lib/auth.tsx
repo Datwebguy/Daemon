@@ -14,6 +14,8 @@ export type AuthState = {
   logout: () => void;
   /** e.g. the Privy email, if any */
   label?: string;
+  /** Privy access token for calling our own server routes (undefined with a plain wallet). */
+  getAccessToken?: () => Promise<string | null>;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -25,7 +27,7 @@ export function useAuth(): AuthState {
 }
 
 export function PrivyAuthBridge({ children }: { children: ReactNode }) {
-  const { ready, authenticated, login, logout, user } = usePrivy();
+  const { ready, authenticated, login, logout, user, getAccessToken } = usePrivy();
   const value = useMemo<AuthState>(
     () => ({
       provider: "privy",
@@ -34,8 +36,9 @@ export function PrivyAuthBridge({ children }: { children: ReactNode }) {
       login: () => login(),
       logout: () => void logout(),
       label: user?.email?.address ?? user?.google?.email ?? user?.twitter?.username ?? undefined,
+      getAccessToken,
     }),
-    [ready, authenticated, login, logout, user],
+    [ready, authenticated, login, logout, user, getAccessToken],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

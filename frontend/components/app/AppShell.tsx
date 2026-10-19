@@ -9,6 +9,7 @@ import { DOLLARS_LABEL, MINT_LABEL, useStarter } from "@/lib/starter";
 import { Logo } from "../brand/Logo";
 import { ThemeToggle } from "../ThemeToggle";
 import { WakingBanner } from "./WakingBanner";
+import { WelcomeMon } from "./WelcomeMon";
 import { Wallet } from "./Wallet";
 
 type Tone = "--butter" | "--pink" | "--sky" | "--jelly";
@@ -107,6 +108,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </header>
 
         <WakingBanner />
+        <WelcomeMon />
 
         {/* pages manage their own padding so they can bleed to the edges */}
         <main className="min-h-[calc(100dvh-4rem)] pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0">{children}</main>

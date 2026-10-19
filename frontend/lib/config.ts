@@ -50,6 +50,7 @@ export const contracts = {
   chogToken: addr(process.env.NEXT_PUBLIC_CHOG_TOKEN),
   stableVault: addr(process.env.NEXT_PUBLIC_STABLE_VAULT),
   degenVault: addr(process.env.NEXT_PUBLIC_DEGEN_VAULT),
+  welcomeDrip: addr(process.env.NEXT_PUBLIC_WELCOME_DRIP),
 } as const;
 
 /** Minimum set needed to show a Daemon at all. */
