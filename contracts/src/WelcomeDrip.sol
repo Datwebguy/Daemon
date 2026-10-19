@@ -8,9 +8,10 @@ import {ReentrancyGuardTransient} from "@openzeppelin/contracts/utils/Reentrancy
 ///         leaving the app for a faucet. Anyone may fund it by sending MON.
 /// @dev Only the `relayer` (the app's server, which checks the player's sign-in) can call `claimFor`, and it pays the
 ///      gas the new wallet does not have. Everyone else is refused, so bots cannot drain the pool by calling the
-///      contract directly. The limits are enforced here, not by the relayer: one claim per wallet, only for wallets
-///      holding less than `amount`, and at most `dailyLimit` claims per UTC day, so even a stolen relayer key can hand
-///      out at most `amount * dailyLimit` per day. The funder can swap the relayer (if its key leaks) and withdraw
+///      contract directly. The limits are enforced here, not by the relayer: one claim per wallet AND one per signed-in
+///      account (`userId`, a hash of the sign-in identity, so many fresh wallets cannot farm one account), only for
+///      wallets holding less than `amount`, and at most `dailyLimit` claims per UTC day, so even a stolen relayer key
+///      can hand out at most `amount * dailyLimit` per day. The funder can swap the relayer (if its key leaks) and withdraw
 ///      what is left; it has no other power.
 contract WelcomeDrip is ReentrancyGuardTransient {
     /// @notice MON sent to each new wallet.
@@ -24,12 +25,14 @@ contract WelcomeDrip is ReentrancyGuardTransient {
 
     /// @notice Wallets that already received their welcome MON.
     mapping(address wallet => bool) public claimed;
+    /// @notice Signed-in accounts (hash of the sign-in identity) that already received their welcome MON.
+    mapping(bytes32 userId => bool) public userClaimed;
     /// @notice UTC day (timestamp / 1 day) of the current counter.
     uint256 public day;
     /// @notice Claims made during `day`.
     uint256 public claimsToday;
 
-    event Dripped(address indexed to, uint256 amount);
+    event Dripped(address indexed to, bytes32 indexed userId, uint256 amount);
     event Funded(address indexed from, uint256 amount);
     event Withdrawn(address indexed to, uint256 amount);
     event RelayerChanged(address indexed relayer);
@@ -37,6 +40,8 @@ contract WelcomeDrip is ReentrancyGuardTransient {
     error ZeroAddress();
     error InvalidConfig();
     error AlreadyClaimed();
+    error UserAlreadyClaimed();
+    error ZeroUser();
     error NotNew(uint256 balance);
     error DailyLimitReached();
     error OutOfFunds();
@@ -61,11 +66,16 @@ contract WelcomeDrip is ReentrancyGuardTransient {
         emit Funded(msg.sender, msg.value);
     }
 
-    /// @notice Sends `amount` MON to `to` once, if `to` is a near-empty wallet and today's budget allows it.
-    function claimFor(address to) external nonReentrant {
+    /// @notice Sends `amount` MON to `to` once, if `to` is a near-empty wallet, the signed-in account has not claimed
+    ///         before, and today's budget allows it.
+    /// @param to the new wallet
+    /// @param userId hash of the signed-in account's identity (set by the relayer from the verified sign-in)
+    function claimFor(address to, bytes32 userId) external nonReentrant {
         if (msg.sender != relayer) revert NotRelayer();
         if (to == address(0)) revert ZeroAddress();
+        if (userId == bytes32(0)) revert ZeroUser();
         if (claimed[to]) revert AlreadyClaimed();
+        if (userClaimed[userId]) revert UserAlreadyClaimed();
         if (to.balance >= amount) revert NotNew(to.balance);
         if (address(this).balance < amount) revert OutOfFunds();
         uint256 today = block.timestamp / 1 days;
@@ -76,10 +86,11 @@ contract WelcomeDrip is ReentrancyGuardTransient {
         if (claimsToday >= dailyLimit) revert DailyLimitReached();
 
         claimed[to] = true;
+        userClaimed[userId] = true;
         ++claimsToday;
         (bool ok,) = to.call{value: amount}("");
         if (!ok) revert TransferFailed();
-        emit Dripped(to, amount);
+        emit Dripped(to, userId, amount);
     }
 
     /// @notice Why `to` cannot claim right now (empty string = it can).
