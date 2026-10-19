@@ -24,12 +24,12 @@ function fail(status: number, error: string) {
 }
 
 async function signedIn(req: Request): Promise<boolean> {
-  if (!jwks) return true; // no Privy (plain wallet login): the contract limits still apply
+  if (!jwks) return process.env.ALLOW_ANON_WELCOME === "1"; // no Privy configured: closed unless explicitly opened
   const auth = req.headers.get("authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
   if (!token) return false;
   try {
-    await jwtVerify(token, jwks, { issuer: "privy.io", audience: env.privyAppId });
+    await jwtVerify(token, jwks, { issuer: "privy.io", audience: env.privyAppId, algorithms: ["ES256"] });
     return true;
   } catch {
     return false;
