@@ -29,6 +29,10 @@ contracts:
     handler: ./src/EventHandlers.ts
     events:
       - event: ERC6551AccountCreated(address account, address indexed implementation, bytes32 salt, uint256 chainId, address indexed tokenContract, uint256 indexed tokenId)
+  - name: MockChog
+    handler: ./src/EventHandlers.ts
+    events:
+      - event: Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
   - name: DaemonAccount
     handler: ./src/EventHandlers.ts
     # No address: registered at runtime from ERC6551AccountCreated.
@@ -63,6 +67,10 @@ chains:
     contracts:
       - name: ERC6551Registry
         address:
-          - 0x000000006551c19487814612e58FE06813775758
+          - "0x000000006551c19487814612e58FE06813775758"
+      # The Chog collection: owner tracking (Chog entity). Same address the discovery filter above uses.
+      - name: MockChog
+        address:
+          - "${ENVIO_MOCK_CHOG}"
       # DaemonAccount is intentionally not listed here: its addresses come from
       # contractRegister (dynamic, like a factory).

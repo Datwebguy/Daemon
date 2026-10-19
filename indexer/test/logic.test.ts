@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  ZERO_ADDRESS,
   ZERO_SALT,
   applyAllocation,
+  applyChogTransfer,
   applyCompounded,
   applyHype,
   applyKeeperCompound,
@@ -138,5 +140,26 @@ describe("keeper attribution (Compounded.caller = bounty recipient)", () => {
   it("a different recipient is a different keeper", () => {
     const other = "0x00000000000000000000000000000000000000bb";
     expect(applyKeeperCompound(undefined, other, 1n, 1n, 1).id).not.toBe(keeperIdOf(KEEPER));
+  });
+});
+
+describe("applyChogTransfer", () => {
+  const ALICE = "0xAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAaAa";
+  const BOB = "0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB";
+  it("the first transfer is the mint and records who holds it, lowercase", () => {
+    const c = applyChogTransfer(undefined, ALICE, 7n, 100, 1_700_000_000);
+    expect(c).toEqual({ id: "7", tokenId: 7n, owner: ALICE.toLowerCase(), mintedAtBlock: 100, mintedAtTimestamp: 1_700_000_000, transferCount: 1 });
+  });
+  it("later transfers change only the owner and the count", () => {
+    const minted = applyChogTransfer(undefined, ALICE, 7n, 100, 1_700_000_000);
+    const sold = applyChogTransfer(minted, BOB, 7n, 250, 1_700_000_500);
+    expect(sold.owner).toBe(BOB.toLowerCase());
+    expect(sold.mintedAtBlock).toBe(100);
+    expect(sold.mintedAtTimestamp).toBe(1_700_000_000);
+    expect(sold.transferCount).toBe(2);
+  });
+  it("a transfer to the zero address marks the Chog burned", () => {
+    const burned = applyChogTransfer(applyChogTransfer(undefined, ALICE, 1n, 1, 1), ZERO_ADDRESS, 1n, 2, 2);
+    expect(burned.owner).toBe(ZERO_ADDRESS);
   });
 });

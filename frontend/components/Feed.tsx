@@ -2,27 +2,31 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { zeroAddress } from "viem";
 import { txUrl } from "@/lib/config";
 import { fmtUnits, shortAddr, toBigIntSafe } from "@/lib/format";
-import { useProtocol } from "@/lib/hooks";
+import { useProtocol, useSlowNow } from "@/lib/hooks";
 import {
   FEED_QUERY,
   gql,
   indexerConfigured,
   LEADERBOARD_QUERY,
+  SEASON_MOODS_QUERY,
+  SEASON_QUERY,
   type CompoundedRow,
   type DaemonRow,
   type DaemonUpdateRow,
   type HypedRow,
 } from "@/lib/indexer";
 import { moodOf } from "@/lib/mood";
+import { rankSeason, seasonEnd, seasonStart } from "@/lib/season";
+import { fmtDuration } from "@/lib/format";
 import { ChogFace } from "@/components/ChogFace";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { PageHero } from "./app/PageHero";
 import { STICKER_BTN } from "./app/color";
-import { cx, Empty, Loading, Notice } from "./ui";
+import { cx, Empty, Loading, Notice, Segmented } from "./ui";
 
 type FeedItem =
   | ({ kind: "update" } & DaemonUpdateRow)
@@ -175,20 +179,67 @@ const PODIUM = [
   { rank: 3, fill: "bg-pink", block: "h-14", face: "h-14 w-14 sm:h-16 sm:w-16" },
 ] as const;
 
+const isDaemonRow = (x: unknown): x is DaemonRow =>
+  isObj(x) && typeof x.id === "string" && toBigIntSafe(x.tokenId) !== undefined && toBigIntSafe(x.lifetimeYield) !== undefined;
+
+/** This season's board: yield earned since Monday 00:00 UTC, with each Chog's current mood. `lifetimeYield` carries the season total. */
+async function seasonBoard(since: number): Promise<DaemonRow[]> {
+  const events = await gql<{ DaemonUpdate: unknown }>(SEASON_QUERY, { since, limit: 1000 });
+  const ranked = rankSeason(arr(events.DaemonUpdate) as { tokenId: unknown; yieldAmount: unknown }[]).slice(0, 20);
+  if (ranked.length === 0) return [];
+  const moods = await gql<{ Daemon: unknown }>(SEASON_MOODS_QUERY, { ids: ranked.map((r) => r.tokenId.toString()) });
+  const byId = new Map(arr(moods.Daemon).filter(isObj).map((d) => [String(d.tokenId), d]));
+  return ranked.map((r) => {
+    const d = byId.get(r.tokenId.toString());
+    return {
+      id: typeof d?.id === "string" ? d.id : r.tokenId.toString(),
+      tokenId: r.tokenId.toString(),
+      account: typeof d?.account === "string" ? d.account : "",
+      mood: typeof d?.mood === "number" ? d.mood : 0,
+      lastMessage: typeof d?.lastMessage === "string" ? d.lastMessage : null,
+      lifetimeYield: r.earned.toString(),
+    };
+  });
+}
+
 function Leaderboard() {
   const { asset } = useProtocol();
+  const [scope, setScope] = useState<"week" | "all">("week");
+  const now = useSlowNow();
+  const since = seasonStart(now);
   const q = useQuery({
-    queryKey: ["indexer-leaderboard"],
+    queryKey: ["indexer-leaderboard", scope, scope === "week" ? since : 0],
     refetchInterval: 30_000,
     queryFn: async () =>
-      arr((await gql<{ Daemon: unknown }>(LEADERBOARD_QUERY, { limit: 20 })).Daemon).filter(
-        // Daemon rows carry no block number, so check just the fields the board uses.
-        (x): x is DaemonRow => isObj(x) && typeof x.id === "string" && toBigIntSafe(x.tokenId) !== undefined && toBigIntSafe(x.lifetimeYield) !== undefined,
-      ),
+      scope === "week"
+        ? seasonBoard(since)
+        : arr((await gql<{ Daemon: unknown }>(LEADERBOARD_QUERY, { limit: 20 })).Daemon).filter(isDaemonRow),
   });
-  if (q.isLoading) return <Loading label="Tallying up…" />;
-  if (q.error) return <Notice tone="error" title="The leaderboard is taking a nap">Try again in a moment.</Notice>;
-  if (!q.data?.length) return <Empty title="No one on the board yet">Earn a harvest to claim the top spot.</Empty>;
+  const switcher = (
+    <div className="mb-4">
+      <Segmented
+        label="Leaderboard period"
+        value={scope}
+        onChange={setScope}
+        options={[
+          { value: "week", label: "This week" },
+          { value: "all", label: "All time" },
+        ]}
+      />
+      {scope === "week" && <p className="mt-2 text-center text-xs text-dim">New season in {fmtDuration(seasonEnd(now) - now)} (Mondays, 00:00 UTC)</p>}
+    </div>
+  );
+  if (q.isLoading) return <div>{switcher}<Loading label="Tallying up…" /></div>;
+  if (q.error) return <div>{switcher}<Notice tone="error" title="The leaderboard is taking a nap">Try again in a moment.</Notice></div>;
+  if (!q.data?.length)
+    return (
+      <div>
+        {switcher}
+        <Empty title={scope === "week" ? "A fresh season" : "No one on the board yet"}>
+          {scope === "week" ? "Nobody has earned anything yet this week. Harvest a Daemon to take the lead." : "Earn a harvest to claim the top spot."}
+        </Empty>
+      </div>
+    );
 
   const earned = (d: DaemonRow) => `+${fmtUnits(toBigIntSafe(d.lifetimeYield), asset?.decimals ?? 18, 2)}`;
   const top = q.data.slice(0, 3);
@@ -198,6 +249,7 @@ function Leaderboard() {
 
   return (
     <div>
+      {switcher}
       <ol className="flex items-end justify-center" aria-label="Top three">
         {stage.map(({ d, p }) => (
           <li key={d.id} className={cx("min-w-0 flex-1", p.rank !== 1 && "max-w-[34%]")}>

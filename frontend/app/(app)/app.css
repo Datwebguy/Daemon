@@ -55,6 +55,12 @@
     height: 100%;
     margin-left: -3px;
   }
+  @media (max-width: 39.99rem) {
+    .seg {
+      left: 1.25rem;
+      top: 1.25rem;
+    }
+  }
   .seg::before,
   .seg::after {
     content: "";

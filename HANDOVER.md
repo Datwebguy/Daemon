@@ -12,9 +12,9 @@
 
 ## Deployment Runbook (Monad Testnet)
 
-1. Deploy everything with one command (deployer needs ~8 MON: ~5.2 gas + 2 for the WMON pool):
+1. Deploy everything with one command. Budget: about 3.5 MON of gas at today's ~100 gwei (the real Chog traits are deployed on-chain: ~7M of the ~33M gas), plus `WMON_LIQUIDITY` (default 2 MON), plus `DRIP_FUNDING` (default 5 MON, the welcome gift pool). So ~10 MON by default; with less, lower them, e.g. `WMON_LIQUIDITY=300000000000000000 DRIP_FUNDING=1000000000000000000`. The drip can be topped up later by sending MON to it:
    `cd contracts && forge script script/Deploy.s.sol --rpc-url monad_testnet --broadcast --private-key $DEPLOYER_KEY`
-   This deploys test tokens, oracle, router + pools, `TraitPolicy`, `StrategyRegistry`, `StableVault`, `DegenVault`, the `DaemonAccount` implementation, `MockChog` (linked to the canonical ERC-6551 registry) and `DaemonHub`, funds both reward pools, and writes `contracts/deployments/monad-testnet.json`. Testnet parameters live in `script/DaemonDeploy.sol`.  
+   This deploys test tokens, oracle, router + pools, `TraitPolicy`, `StrategyRegistry` (with the $CHOG perks and Pyth Entropy lucky hype on), `StableVault`, `DegenVault`, the `DaemonAccount` implementation, `MockChog` (linked to the canonical ERC-6551 registry and to the on-chain real Chog traits), `DaemonHub` and `WelcomeDrip`, funds both reward pools and the drip, and writes `contracts/deployments/monad-testnet.json`. Then check the real traits on-chain: `RPC=<url> READER=<chogRealTraits address> node script/verify-chog-traits.mjs <dir>/expected.json` (after `node script/gen-chog-traits.mjs <dir>`). Testnet parameters live in `script/DaemonDeploy.sol`.  
 2. Register adapters (timelock set short on testnet)  
 3. Record all addresses  
 4. Verify contracts on MonadVision / Monadscan  
@@ -30,11 +30,13 @@ NEXT_PUBLIC_DAEMON_ACCOUNT_IMPL=...
 NEXT_PUBLIC_STRATEGY_REGISTRY=...
 NEXT_PUBLIC_DAEMON_HUB=...
 NEXT_PUBLIC_MOCK_CHOG=...
+NEXT_PUBLIC_WELCOME_DRIP=...
 NEXT_PUBLIC_PRIVY_APP_ID=...
 NEXT_PUBLIC_INDEXER_URL=...
 ```
 
-8. `npm run build` and deploy frontend (Vercel or similar)
+   Server-only secret (Vercel env, never `NEXT_PUBLIC_`): `DRIP_RELAYER_KEY` = the key of a wallet holding ~0.2 MON that only pays the claim gas for the welcome gift. Deploy with `DRIP_RELAYER=<that wallet's address>` (the script sends it 0.2 MON for gas); only that address can trigger gifts, and the funder can replace it with `setRelayer` if the key leaks. Leave `DRIP_RELAYER_KEY` and `NEXT_PUBLIC_WELCOME_DRIP` empty to turn the gift off.
+8. `npm run build` and deploy frontend (Vercel project root directory: `frontend`)
 
 ## Rehearse Locally First (recommended)
 

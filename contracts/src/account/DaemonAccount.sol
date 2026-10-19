@@ -18,6 +18,7 @@ import {IStrategyRegistry} from "../interfaces/IStrategyRegistry.sol";
 import {IYieldSource} from "../interfaces/IYieldSource.sol";
 import {IDaemonRouter, IPriceOracle, IWMON} from "../interfaces/IDaemonRouter.sol";
 import {ITraitPolicy} from "../interfaces/IChog.sol";
+import {IEntropyV2, IEntropyConsumerV2} from "../interfaces/IEntropyV2.sol";
 
 /// @title DaemonAccount
 /// @notice ERC-6551 token-bound account for one Chog. Earns yield in approved sources, is compounded by anyone
@@ -36,6 +37,7 @@ contract DaemonAccount is
     IERC1271,
     IERC721Receiver,
     IERC1155Receiver,
+    IEntropyConsumerV2,
     ReentrancyGuardTransient
 {
     using SafeERC20 for IERC20;
@@ -58,6 +60,8 @@ contract DaemonAccount is
 
     uint256 internal constant BPS = 10_000;
     bytes4 internal constant ERC1271_MAGIC = 0x1626ba7e;
+    /// @notice Where burned $CHOG goes (plain transfer: works for any ERC-20, including ones without burn()).
+    address public constant BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     /// @notice Platform configuration + approved sources. Immutable: lives in implementation code.
     IStrategyRegistry public immutable STRATEGY_REGISTRY;
@@ -92,6 +96,8 @@ contract DaemonAccount is
     uint256 internal _potChog;
     uint256 internal _updates;
     string internal _lastMessage;
+    /// @dev Pending lucky rolls: Entropy sequence number -> hyper.
+    mapping(uint64 sequence => address hyper) internal _luckyRolls;
 
     // ------------------------------------------------------------------------------------------------------------
     // Errors
@@ -114,6 +120,8 @@ contract DaemonAccount is
     error HypeDaemonCooldown(uint256 readyAt);
     error ChogDisabled();
     error OwnershipCycle();
+    error LuckyDisabled();
+    error NotEntropy();
 
     // ------------------------------------------------------------------------------------------------------------
     // Construction / receive
@@ -400,11 +408,51 @@ contract DaemonAccount is
 
     /// @inheritdoc IDaemonAccount
     function hype() external payable nonReentrant {
+        _hypeMon(STRATEGY_REGISTRY.config(), msg.value);
+    }
+
+    /// @inheritdoc IDaemonAccount
+    /// @dev The Entropy fee is read at call time; anything above it is the hype. The hype applies immediately and
+    ///      never depends on the roll: if Entropy never answers, the hyper simply gets a normal hype.
+    function hypeLucky() external payable nonReentrant {
         IStrategyRegistry.Config memory c = STRATEGY_REGISTRY.config();
-        if (msg.value == 0 || msg.value < c.minHypeMon) revert HypeTooSmall(msg.value, c.minHypeMon);
-        _checkHypeCooldowns(c);
-        _potMon += msg.value;
-        _hype(c, address(0), msg.value);
+        if (c.entropy == address(0)) revert LuckyDisabled();
+        uint256 fee = IEntropyV2(c.entropy).getFeeV2(c.luckyGasLimit);
+        if (msg.value <= fee) revert HypeTooSmall(msg.value, fee + c.minHypeMon);
+        _hypeMon(c, msg.value - fee);
+        uint64 sequence = IEntropyV2(c.entropy).requestV2{value: fee}(c.luckyGasLimit);
+        _luckyRolls[sequence] = msg.sender;
+        emit LuckyRollRequested(_tokenId(), msg.sender, sequence);
+    }
+
+    /// @inheritdoc IDaemonAccount
+    function luckyFee() external view returns (uint256) {
+        IStrategyRegistry.Config memory c = STRATEGY_REGISTRY.config();
+        if (c.entropy == address(0)) return 0;
+        return IEntropyV2(c.entropy).getFeeV2(c.luckyGasLimit);
+    }
+
+    /// @notice Pyth Entropy callback. Only the configured Entropy contract may call it, and only for a roll this
+    ///         Daemon requested. A critical roll sets the boost to the maximum multiplier and adds one boost
+    ///         duration (reviving an expired boost). The boost is still paid only from the pot, so a critical roll
+    ///         can never create value that hypers did not pay in.
+    /// @dev Kept small (no message update) so it fits the requested callback gas limit.
+    function _entropyCallback(uint64 sequence, address, bytes32 randomNumber) external nonReentrant {
+        IStrategyRegistry.Config memory c = STRATEGY_REGISTRY.config();
+        if (c.entropy == address(0) || msg.sender != c.entropy) revert NotEntropy();
+        address hyper = _luckyRolls[sequence];
+        if (hyper == address(0)) return; // unknown or already answered
+        delete _luckyRolls[sequence];
+
+        bool critical = uint256(randomNumber) % BPS < c.luckyChanceBps;
+        uint256 tokenId = _tokenId();
+        if (critical) {
+            uint256 from = _boostExpiresAt > block.timestamp ? _boostExpiresAt : block.timestamp;
+            _boostMultiplierBps = BPS + c.maxBoostBps;
+            _boostExpiresAt = from + c.boostDuration;
+            emit BoostApplied(tokenId, _boostMultiplierBps, _boostExpiresAt);
+        }
+        emit LuckyRoll(tokenId, hyper, sequence, critical);
     }
 
     /// @inheritdoc IDaemonAccount
@@ -418,8 +466,13 @@ contract DaemonAccount is
         chog.safeTransferFrom(msg.sender, address(this), amount);
         uint256 received = chog.balanceOf(address(this)) - b0;
         if (received < c.minHypeChog) revert HypeTooSmall(received, c.minHypeChog); // fee-on-transfer guard
-        _potChog += received;
-        _hype(c, c.chog, received);
+        uint256 burned = (received * c.chogBurnBps) / BPS;
+        if (burned != 0) {
+            chog.safeTransfer(BURN_ADDRESS, burned);
+            emit ChogBurned(_tokenId(), msg.sender, burned);
+        }
+        _potChog += received - burned;
+        _hype(c, c.chog, received - burned);
     }
 
     // ------------------------------------------------------------------------------------------------------------
@@ -694,6 +747,13 @@ contract DaemonAccount is
     // Internal: hype / boost
     // ------------------------------------------------------------------------------------------------------------
 
+    function _hypeMon(IStrategyRegistry.Config memory c, uint256 amount) internal {
+        if (amount == 0 || amount < c.minHypeMon) revert HypeTooSmall(amount, c.minHypeMon);
+        _checkHypeCooldowns(c);
+        _potMon += amount;
+        _hype(c, address(0), amount);
+    }
+
     function _checkHypeCooldowns(IStrategyRegistry.Config memory c) internal view {
         uint256 last = lastHypeBy[msg.sender];
         if (last != 0 && block.timestamp < last + c.hypeCooldownPerUser) {
@@ -705,16 +765,22 @@ contract DaemonAccount is
         }
     }
 
-    /// @dev Multiplier += boostStepBps (capped at 1x + maxBoostBps); an expired boost restarts at 1x + step.
-    ///      Every hype extends the expiry to now + boostDuration.
+    /// @dev Multiplier += step (capped at 1x + maxBoostBps); an expired boost restarts at 1x + step.
+    ///      A $CHOG hype uses the $CHOG step and duration when they are set (bigger, longer boost).
+    ///      The expiry becomes now + duration, but never moves earlier than an expiry already in place.
     function _hype(IStrategyRegistry.Config memory c, address payToken, uint256 amount) internal {
         lastHypeBy[msg.sender] = block.timestamp;
         lastHypeAt = block.timestamp;
         lastActivityAt = block.timestamp;
 
-        uint256 base = _boostActive() ? _boostMultiplierBps : BPS;
-        uint256 mult = Math.min(base + c.boostStepBps, BPS + c.maxBoostBps);
-        uint256 expiresAt = block.timestamp + c.boostDuration;
+        bool withChog = payToken != address(0) && payToken == c.chog;
+        uint256 step = withChog && c.chogBoostStepBps != 0 ? c.chogBoostStepBps : c.boostStepBps;
+        uint256 duration = withChog && c.chogBoostDuration != 0 ? c.chogBoostDuration : c.boostDuration;
+        bool active = _boostActive();
+        uint256 base = active ? _boostMultiplierBps : BPS;
+        uint256 mult = Math.min(base + step, BPS + c.maxBoostBps);
+        uint256 expiresAt = block.timestamp + duration;
+        if (active && _boostExpiresAt > expiresAt) expiresAt = _boostExpiresAt;
         _boostMultiplierBps = mult;
         _boostExpiresAt = expiresAt;
 

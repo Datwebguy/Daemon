@@ -34,6 +34,7 @@ function ChogCardBody({ tokenId }: { tokenId: bigint }) {
       </div>
     );
   }
+  const need = daemon.deployed ? needsYou(state, now) : undefined;
   const cardMood = daemon.deployed ? state.mood : undefined;
   const tabColor = daemon.deployed && m ? m.hex : undefined;
   const tabLabel = daemon.isLoading || chog.isLoading ? null : !daemon.deployed ? "Asleep" : (m?.name ?? null);
@@ -85,6 +86,12 @@ function ChogCardBody({ tokenId }: { tokenId: bigint }) {
               <>
                 <div className="truncate font-display text-xl leading-none tabular-nums">{fmtUnits(state.totalAssets, asset?.decimals ?? 18, 2)}</div>
                 <div className="mt-1 text-xs font-semibold uppercase tracking-wider text-dim">{asset?.symbol ?? ""} saved</div>
+                {need && (
+                  <div className="mt-2 flex items-center gap-1.5 rounded-lg bg-pink/25 px-2 py-1 text-[11px] font-extrabold leading-none">
+                    <i aria-hidden className="live-dot h-2 w-2 shrink-0 rounded-full border border-[#1e1238] bg-pink" />
+                    <span className="truncate">{need}</span>
+                  </div>
+                )}
               </>
             ) : (
               <>
@@ -97,4 +104,17 @@ function ChogCardBody({ tokenId }: { tokenId: bigint }) {
       </div>
     </Link>
   );
+}
+
+/** The one thing a holder should know about their Daemon right now (undefined = all good). */
+function needsYou(
+  s: { mood?: number; boostExpiresAt?: bigint; nextCompoundAt?: bigint; pendingProfit?: bigint; totalAssets?: bigint },
+  now: number,
+): string | undefined {
+  if (s.mood === 4) return "Needs you";
+  const boostLeft = s.boostExpiresAt !== undefined ? Number(s.boostExpiresAt) - now : 0;
+  if (boostLeft > 0 && boostLeft < 3600) return "Boost ends soon";
+  const ready = s.nextCompoundAt !== undefined && Number(s.nextCompoundAt) <= now;
+  if (ready && (s.pendingProfit ?? BigInt(0)) > BigInt(0) && (s.totalAssets ?? BigInt(0)) > BigInt(0)) return "Ready to harvest";
+  return undefined;
 }

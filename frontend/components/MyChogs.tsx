@@ -3,50 +3,23 @@
 import Link from "next/link";
 import { useState, type CSSProperties } from "react";
 import { useAccount } from "wagmi";
-import { useAuth } from "@/lib/auth";
 import { contracts, FAUCET_URL } from "@/lib/config";
 import { useOwnedChogs } from "@/lib/hooks";
 import { DOLLARS_LABEL, MINT_LABEL, useStarter } from "@/lib/starter";
 import { ChogCard } from "./ChogCard";
 import { ChogFace } from "@/components/ChogFace";
 import { PageHero } from "./app/PageHero";
+import { SignedOutDen } from "./app/SignedOutDen";
 import { STICKER_BTN } from "./app/color";
 import { Button, cx, Loading, Notice } from "./ui";
 
 export function MyChogs() {
   const { address } = useAccount();
-  const auth = useAuth();
   const owned = useOwnedChogs(address);
   const [shown, setShown] = useState(24);
 
-  if (!address) {
-    return (
-      <div className="relative overflow-hidden">
-        <div aria-hidden className="tape-bg absolute inset-y-0 right-0 hidden w-1/3 opacity-80 lg:block" />
-        <section className="relative mx-auto grid min-h-[calc(100dvh-4rem)] max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:px-10">
-          <div>
-            <span className="stk inline-block -rotate-2 !rounded-lg bg-butter px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#1e1238]">Your den</span>
-            <h1 className="mt-5 font-display text-[clamp(3rem,9vw,6.4rem)] leading-[0.9] tracking-tight">
-              Your Daemons
-              <br />
-              are <span className="inline-block -rotate-2 bg-pink px-3 text-[#1e1238] [box-shadow:5px_5px_0_var(--st-shadow)]">asleep.</span>
-            </h1>
-            <p className="mt-6 max-w-md text-lg text-dim">Sign in to wake them up. Use your email, Google, X or a wallet. It takes a few seconds.</p>
-            <Button size="lg" className={cx("mt-8", STICKER_BTN)} onClick={auth.login} disabled={!auth.ready}>
-              Sign in to your den
-            </Button>
-          </div>
-          <div className="relative mx-auto h-72 w-full max-w-md sm:h-96" aria-hidden>
-            <ChogFace seed={2} className="absolute left-0 top-10 h-32 w-32 -rotate-12 sm:h-40 sm:w-40" />
-            <ChogFace seed={5} className="absolute bottom-0 right-2 h-36 w-36 rotate-6 sm:h-44 sm:w-44" />
-            <ChogFace className="animate-float absolute left-1/2 top-1/2 h-48 w-48 -translate-x-1/2 -translate-y-1/2 sm:h-60 sm:w-60" />
-            <span className="absolute right-6 top-2 font-display text-5xl text-jelly sm:text-6xl">Z</span>
-            <span className="absolute right-0 top-14 font-display text-3xl text-pink sm:text-4xl">z</span>
-          </div>
-        </section>
-      </div>
-    );
-  }
+  // Until the contracts are live, or before signing in, the den explains itself instead of showing steps that can't work yet.
+  if (!address || !contracts.mockChog) return <SignedOutDen />;
 
   const ids = owned.data?.ids ?? [];
   return (
@@ -201,30 +174,30 @@ function QuestTape({ firstChog }: { firstChog?: bigint }) {
   return (
     <section
       aria-label="Getting started"
-      className="relative border-b-[3px] border-[color:var(--st-line)] px-4 pb-10 pt-6 sm:px-6 lg:px-10"
+      className="relative border-b-[3px] border-[color:var(--st-line)] px-4 pb-6 pt-5 sm:px-6 sm:pb-10 sm:pt-6 lg:px-10"
       style={{ background: "color-mix(in oklab, var(--mint) 12%, var(--surface))" }}
     >
       <div aria-hidden className="tape-bg pointer-events-none absolute inset-0 opacity-50" />
       <div className="relative flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-display text-3xl">Getting started</h2>
+        <h2 className="font-display text-2xl sm:text-3xl">Getting started</h2>
         <span className="stk !rounded-full px-3 py-0.5 text-sm font-bold tabular-nums">
           {doneCount} of {steps.length} done
         </span>
       </div>
-      <ol className="relative mx-auto mt-8 grid max-w-6xl md:grid-cols-4">
+      <ol className="relative mx-auto mt-5 grid max-w-6xl sm:mt-8 md:grid-cols-4">
         {steps.map((st, i) => {
           const isCurrent = i === current;
           return (
-            <li key={st.title} className="relative flex gap-4 pb-8 last:pb-0 md:flex-col md:items-center md:gap-4 md:px-2 md:pb-0">
+            <li key={st.title} className="relative flex gap-3 pb-3 last:pb-0 sm:gap-4 sm:pb-8 md:flex-col md:items-center md:gap-4 md:px-2 md:pb-0">
               {i < steps.length - 1 && <span aria-hidden className="seg" style={{ "--fill": st.done ? 1 : 0 } as CSSProperties} />}
               <span
                 className={cx(
-                  "stk relative z-10 grid h-14 w-14 shrink-0 place-items-center !rounded-full font-display text-2xl leading-none",
+                  "stk relative z-10 grid h-10 w-10 shrink-0 place-items-center !rounded-full font-display text-lg leading-none sm:h-14 sm:w-14 sm:text-2xl",
                   st.done ? "bg-mint text-[#1e1238]" : isCurrent ? "wiggle bg-butter text-[#1e1238]" : "bg-surface",
                 )}
               >
                 {st.done ? (
-                  <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" aria-label="Done" role="img">
+                  <svg viewBox="0 0 24 24" className="h-5 w-5 sm:h-7 sm:w-7" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" aria-label="Done" role="img">
                     <path d="M5 12l5 5L20 7" />
                   </svg>
                 ) : (
@@ -233,14 +206,14 @@ function QuestTape({ firstChog }: { firstChog?: bigint }) {
               </span>
               <div
                 className={cx(
-                  "stk min-w-0 flex-1 p-4 md:w-full md:flex-none md:text-center",
+                  "stk min-w-0 flex-1 px-3.5 py-3 sm:p-4 md:w-full md:flex-none md:text-center",
                   i % 2 === 0 ? "md:-rotate-1" : "md:rotate-1",
                   st.done && "opacity-80",
                 )}
               >
-                <div className={cx("font-display text-xl leading-tight", st.done && "line-through decoration-[3px]")}>{st.title}</div>
-                <p className="mt-1 text-sm text-dim">{st.body}</p>
-                {!st.done && st.action && <div className="mt-3">{st.action}</div>}
+                <div className={cx("font-display text-base leading-tight sm:text-xl", st.done && "line-through decoration-[3px]")}>{st.title}</div>
+                <p className="mt-0.5 text-xs text-dim sm:mt-1 sm:text-sm">{st.body}</p>
+                {!st.done && st.action && <div className="mt-2 sm:mt-3">{st.action}</div>}
               </div>
             </li>
           );

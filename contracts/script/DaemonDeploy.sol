@@ -13,6 +13,11 @@ import {DaemonAccount} from "../src/account/DaemonAccount.sol";
 import {DaemonHub} from "../src/DaemonHub.sol";
 import {MockChog} from "../src/chog/MockChog.sol";
 import {TraitPolicy} from "../src/chog/TraitPolicy.sol";
+import {WelcomeDrip} from "../src/WelcomeDrip.sol";
+import {ChogRealTraits, IChogTraitRows, IChogTraitNames} from "../src/chog/ChogRealTraits.sol";
+import {ChogTraitRows0} from "../src/chog/data/ChogTraitRows0.sol";
+import {ChogTraitRows1} from "../src/chog/data/ChogTraitRows1.sol";
+import {ChogTraitNames} from "../src/chog/data/ChogTraitNames.sol";
 
 /// @notice Shared deployment logic for the Monad testnet script and the integration tests.
 /// The caller is responsible for broadcasting (script) or pranking (tests) as `deployer`.
@@ -20,6 +25,9 @@ abstract contract DaemonDeploy {
     address internal constant ERC6551_REGISTRY = 0x000000006551c19487814612e58FE06813775758;
     bytes32 internal constant DAEMON_SALT = bytes32(0); // DaemonHub.accountOf assumes salt 0
     uint256 internal constant DEGEN_EPOCH = 2 hours;
+    /// @dev Pyth Entropy V2 on Monad testnet (Pyth contract_manager store; code checked on-chain 2026-10-19).
+    ///      Used only where it has code, so local test chains simply run without lucky hype.
+    address internal constant PYTH_ENTROPY = 0x825c0390f379C631f3Cf11A82a37D20BddF93c07;
 
     struct Params {
         address deployer;
@@ -28,6 +36,11 @@ abstract contract DaemonDeploy {
         uint256 degenRewards; // DMNR streamed by DegenVault
         uint256 rewardDuration; // seconds the reward budget is meant to last
         uint256 sourceCap; // max dUSD per Daemon per vault
+        uint256 dripAmount; // MON gifted once to each new, empty wallet
+        uint256 dripDailyLimit; // max welcome gifts per UTC day
+        uint256 dripFunding; // MON the deployer puts into the drip at deploy
+        address dripRelayer; // the only address that may trigger a welcome gift (the app's server wallet)
+        uint256 relayerGas; // MON sent to the relayer for gas (0 if the relayer is the deployer)
     }
 
     struct Deployment {
@@ -44,6 +57,8 @@ abstract contract DaemonDeploy {
         DaemonAccount implementation;
         MockChog chog;
         DaemonHub hub;
+        WelcomeDrip drip;
+        ChogRealTraits realTraits;
     }
 
     function _defaultParams(address deployer) internal pure returns (Params memory) {
@@ -55,12 +70,18 @@ abstract contract DaemonDeploy {
             stableRewards: 1_000e18,
             degenRewards: 3_000e18,
             rewardDuration: 30 days,
-            sourceCap: 1_000_000e18
+            sourceCap: 1_000_000e18,
+            // A first visit (mint, wake, deposit, hype, harvest) costs about 0.3 MON at ~100 gwei on testnet.
+            dripAmount: 0.5 ether,
+            dripDailyLimit: 50,
+            dripFunding: 5 ether,
+            dripRelayer: deployer, // real deploys set DRIP_RELAYER
+            relayerGas: 0.2 ether
         });
     }
 
     /// @dev Testnet tuning. Short cooldowns so the full flow can be shown in minutes.
-    function _config(Deployment memory d) internal pure returns (IStrategyRegistry.Config memory c) {
+    function _config(Deployment memory d) internal view returns (IStrategyRegistry.Config memory c) {
         c.asset = address(d.dusd);
         c.wmon = address(d.wmon);
         c.chog = address(d.chogToken);
@@ -81,6 +102,16 @@ abstract contract DaemonDeploy {
         c.minHypeMon = 0.01 ether;
         c.minHypeChog = 10e18;
         c.neglectAfter = 3 days;
+        // $CHOG: twice the boost step of MON, an hour longer, and 10% of every CHOG hype is burned
+        c.chogBoostStepBps = 1000; // +0.10x per CHOG hype
+        c.chogBoostDuration = 4 hours;
+        c.chogBurnBps = 1000; // 10%
+        // lucky hype: Pyth Entropy roll, 1 in 5 is critical (max boost + one more boost duration)
+        if (PYTH_ENTROPY.code.length != 0) {
+            c.entropy = PYTH_ENTROPY;
+            c.luckyChanceBps = 2000; // 20%
+            c.luckyGasLimit = 120_000;
+        }
     }
 
     function _deployDaemon(Params memory p) internal returns (Deployment memory d) {
@@ -126,7 +157,26 @@ abstract contract DaemonDeploy {
         d.implementation = new DaemonAccount(address(d.registry));
         d.chog = new MockChog(3, 10_000);
         d.chog.setDaemon(ERC6551_REGISTRY, address(d.implementation), DAEMON_SALT);
+        // the real Chog Genesis traits, packed on-chain, so tokenURI shows them next to the live Daemon state
+        d.realTraits = new ChogRealTraits(
+            IChogTraitRows(address(new ChogTraitRows0())),
+            IChogTraitRows(address(new ChogTraitRows1())),
+            IChogTraitNames(address(new ChogTraitNames()))
+        );
+        d.chog.setRealTraits(address(d.realTraits));
         d.hub = new DaemonHub();
+
+        // welcome MON for first-time wallets (the app's relayer pays the claim gas)
+        address relayer = p.dripRelayer == address(0) ? p.deployer : p.dripRelayer;
+        d.drip = new WelcomeDrip(p.dripAmount, p.dripDailyLimit, p.deployer, relayer);
+        if (p.dripFunding > 0) {
+            (bool ok,) = address(d.drip).call{value: p.dripFunding}("");
+            require(ok, "drip funding failed");
+        }
+        if (relayer != p.deployer && p.relayerGas > 0) {
+            (bool ok,) = relayer.call{value: p.relayerGas}("");
+            require(ok, "relayer gas funding failed");
+        }
     }
 
     function _seedPool(Deployment memory d, address deployer, address token, uint256 tokenAmount, uint256 dusdAmount)

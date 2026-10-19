@@ -39,8 +39,8 @@ Full research: `reports/Monad ecosystem tools for Daemon.md`
 
 | Layer | Tool | Why / Caveat |
 |---|---|---|
-| Oracles | Pyth price feeds | Swap min-out and mood volatility. Pull-based: bundle updates in the same tx. Confirm on 10143. |
-| Randomness | Pyth Entropy (alt: Supra dVRF) | Rare "critical hype", message variety |
+| Oracles | Pyth price feeds | The contract exists on 10143 (`0x2880aB155794e7179c9eE2e38200202908C17B43`), but Hermes (the update service) now requires an API key, so testnet keeps `MockOracle`. |
+| Randomness | Pyth Entropy V2 | **Used and verified**: `0x825c0390f379C631f3Cf11A82a37D20BddF93c07` on Monad testnet (Pyth contract_manager store; code and fee checked on-chain). Powers lucky hype. |
 | Indexer | Envio or Goldsky | Feed, leaderboard. Public `eth_getLogs` is capped at 100–1,000 blocks. |
 | Dynamic NFT | On-chain SVG `tokenURI` | Chog shows mood, boost and last yield on marketplaces |
 

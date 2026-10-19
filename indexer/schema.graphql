@@ -6,6 +6,19 @@
 #   and 3-4 blocks share one).
 # - Amounts are raw base-asset units (BigInt). Hype amounts are in the hype token's units.
 
+# One row per Chog (testnet NFT), kept current from the collection's Transfer events. This is how the app finds
+# every Chog a wallet holds, including Chogs whose Daemon has not been woken yet.
+type Chog {
+  # tokenId as a decimal string
+  id: ID!
+  tokenId: BigInt! @index
+  # current holder (lowercase); the zero address means burned
+  owner: String! @index
+  mintedAtBlock: Int!
+  mintedAtTimestamp: Int!
+  transferCount: Int!
+}
+
 type Daemon {
   # ERC-6551 account address (lowercase)
   id: ID!

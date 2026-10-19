@@ -9,6 +9,7 @@ import { DOLLARS_LABEL, MINT_LABEL, useStarter } from "@/lib/starter";
 import { Logo } from "../brand/Logo";
 import { ThemeToggle } from "../ThemeToggle";
 import { WakingBanner } from "./WakingBanner";
+import { WelcomeMon } from "./WelcomeMon";
 import { Wallet } from "./Wallet";
 
 type Tone = "--butter" | "--pink" | "--sky" | "--jelly";
@@ -107,6 +108,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </header>
 
         <WakingBanner />
+        <WelcomeMon />
 
         {/* pages manage their own padding so they can bleed to the edges */}
         <main className="min-h-[calc(100dvh-4rem)] pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0">{children}</main>
@@ -170,7 +172,7 @@ function Supplies() {
     { title: "Free MON for fees", hint: "Opens the faucet", icon: "M12 3s6 6.2 6 10.5a6 6 0 0 1-12 0C6 9.2 12 3 12 3z", tone: "--sky", href: FAUCET_URL },
     {
       title: `1,000 test ${s.asset?.symbol ?? "dollars"}`,
-      hint: !s.address ? "Sign in first" : "Pretend money to put to work",
+      hint: !s.address ? "Sign in first" : "Free money to put to work",
       icon: "M12 3v18M16.5 7.5C15.7 6.5 14 6 12 6c-2.4 0-4 1.1-4 2.9 0 4.4 8 2 8 6.2 0 1.8-1.7 3-4 3-2 0-3.5-.6-4.3-1.7",
       tone: "--mint",
       run: () => void s.getDollars(),
@@ -205,7 +207,7 @@ function Supplies() {
         </button>
         {open && (
           <div role="menu" className="sticker animate-pop absolute bottom-0 left-[calc(100%+0.9rem)] z-50 w-72 !rounded-2xl p-2">
-            <p className="px-3 pb-1 pt-2 text-xs text-dim">Everything here is pretend money. Take what you need.</p>
+            <p className="px-3 pb-1 pt-2 text-xs text-dim">Free test money. Take what you need.</p>
             {rows.map((r) => {
               const inner = (
                 <>
@@ -247,9 +249,14 @@ function Supplies() {
         <span className="text-xs font-bold text-dim">Theme</span>
         <ThemeToggle iconOnly className="!h-11" />
       </div>
-      <Link href="/" className="text-center text-xs font-semibold text-dim underline-offset-4 hover:text-fg hover:underline">
-        About Daemon
-      </Link>
+      <div className="flex flex-col items-center gap-1">
+        <Link href="/start" className="text-center text-xs font-semibold text-dim underline-offset-4 hover:text-fg hover:underline">
+          Get started
+        </Link>
+        <Link href="/" className="text-center text-xs font-semibold text-dim underline-offset-4 hover:text-fg hover:underline">
+          About Daemon
+        </Link>
+      </div>
     </div>
   );
 }

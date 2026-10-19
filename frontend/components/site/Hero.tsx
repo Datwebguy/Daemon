@@ -107,9 +107,9 @@ export function Hero() {
                 </svg>
               </span>
             </Link>
-            <a href="#day" className="sticker sticker-pop squish px-5 py-2.5 text-sm font-bold sm:px-6 sm:py-3.5 sm:text-base">
-              See a day in its life
-            </a>
+            <Link href="/practice" className="sticker sticker-pop squish px-5 py-2.5 text-sm font-bold sm:px-6 sm:py-3.5 sm:text-base">
+              Try it, no sign-in
+            </Link>
           </div>
         </div>
 

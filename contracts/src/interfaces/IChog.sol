@@ -18,3 +18,8 @@ interface ITraitPolicy {
     /// @return biasMood the mood (as IDaemonAccount.Mood uint8) this Chog leans toward when nothing else dominates
     function moodBias(address chog, uint256 tokenId) external view returns (uint8 biasMood);
 }
+
+/// @notice Reads the real Chog Genesis traits of an artwork as JSON array items (see ChogRealTraits).
+interface IChogRealTraits {
+    function traitsJson(uint256 artId) external view returns (string memory);
+}

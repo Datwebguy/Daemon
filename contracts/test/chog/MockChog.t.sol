@@ -12,6 +12,10 @@ import {IDaemonAccount} from "../../src/interfaces/IDaemonAccount.sol";
 import {ERC6551RegistryMock} from "./mocks/ERC6551RegistryMock.sol";
 import {MockDaemonAccount, HostileDaemon} from "./mocks/MockDaemonAccount.sol";
 import {Base64Decode} from "./mocks/Base64Decode.sol";
+import {ChogRealTraits, IChogTraitRows, IChogTraitNames} from "../../src/chog/ChogRealTraits.sol";
+import {ChogTraitRows0} from "../../src/chog/data/ChogTraitRows0.sol";
+import {ChogTraitRows1} from "../../src/chog/data/ChogTraitRows1.sol";
+import {ChogTraitNames} from "../../src/chog/data/ChogTraitNames.sol";
 
 contract MockChogTest is Test {
     MockChog internal chog;
@@ -337,6 +341,131 @@ contract MockChogTest is Test {
         chog.transferFrom(alice, bob, id);
         assertEq(chog.artIdOf(id), art);
         assertEq(chog.tokenURI(id), uri);
+    }
+
+    // ------------------------------------------------------------------
+    // tokenURI with the real traits linked: real image + real traits + live Daemon state
+    // ------------------------------------------------------------------
+
+    function _linkRealTraits() internal returns (ChogRealTraits reader) {
+        reader = new ChogRealTraits(
+            IChogTraitRows(address(new ChogTraitRows0())),
+            IChogTraitRows(address(new ChogTraitRows1())),
+            IChogTraitNames(address(new ChogTraitNames()))
+        );
+        vm.prank(deployer);
+        chog.setRealTraits(address(reader));
+    }
+
+    function _tokenJson(uint256 id) internal view returns (string memory) {
+        string memory uri = chog.tokenURI(id);
+        assertEq(vm.indexOf(uri, JSON_PREFIX), 0);
+        return string(Base64Decode.decode(_slice(uri, bytes(JSON_PREFIX).length)));
+    }
+
+    function test_realTraits_onlyDeployerOnceAndOnlyContracts() public {
+        ChogRealTraits reader = new ChogRealTraits(
+            IChogTraitRows(address(new ChogTraitRows0())),
+            IChogTraitRows(address(new ChogTraitRows1())),
+            IChogTraitNames(address(new ChogTraitNames()))
+        );
+        vm.prank(alice);
+        vm.expectRevert(MockChog.NotDeployer.selector);
+        chog.setRealTraits(address(reader));
+        vm.startPrank(deployer);
+        vm.expectRevert(MockChog.ZeroAddress.selector);
+        chog.setRealTraits(address(0));
+        vm.expectRevert(MockChog.RealTraitsNotContract.selector);
+        chog.setRealTraits(makeAddr("eoa"));
+        chog.setRealTraits(address(reader));
+        vm.expectRevert(MockChog.RealTraitsAlreadySet.selector);
+        chog.setRealTraits(address(reader));
+        vm.stopPrank();
+    }
+
+    function test_tokenURI_realImageRealTraitsAndLiveState() public {
+        (uint256 id, MockDaemonAccount acct) = _awakeChog();
+        ChogRealTraits reader = _linkRealTraits();
+        acct.setMood(IDaemonAccount.Mood.Flexing);
+        acct.setBoost(11_000, block.timestamp + 1 hours);
+        acct.setLifetimeYield(12.5e18);
+        acct.setMessage("Boosted and up only.");
+
+        uint256 art = chog.artIdOf(id);
+        string memory json = _tokenJson(id);
+        assertEq(vm.parseJsonString(json, ".name"), string.concat("CHOG #", vm.toString(art), " (Testnet #", vm.toString(id), ")"));
+        assertEq(
+            vm.parseJsonString(json, ".image"),
+            string.concat("ipfs://bafybeihau2egcccbdxymeckmmbrqytbfor5gkt3en6d5fsbueymdbq7g6e/", vm.toString(art), ".webp")
+        );
+        assertTrue(vm.indexOf(vm.parseJsonString(json, ".description"), "Boosted and up only.") != type(uint256).max);
+
+        // the real traits come first, exactly as the reader gives them
+        (string memory headType, string memory headValue) = reader.traitOf(art, 8);
+        uint256 n;
+        while (vm.keyExistsJson(json, string.concat(".attributes[", vm.toString(n), "]"))) ++n;
+        assertGe(n, 12, "real traits + live attributes");
+        bool foundHead;
+        bool foundMood;
+        bool foundBoost;
+        for (uint256 i; i < n; ++i) {
+            string memory k = string.concat(".attributes[", vm.toString(i), "]");
+            string memory t = vm.parseJsonString(json, string.concat(k, ".trait_type"));
+            if (keccak256(bytes(t)) == keccak256(bytes(headType)) && bytes(headValue).length > 0) {
+                assertEq(vm.parseJsonString(json, string.concat(k, ".value")), headValue);
+                foundHead = true;
+            }
+            if (keccak256(bytes(t)) == keccak256("Mood")) {
+                assertEq(vm.parseJsonString(json, string.concat(k, ".value")), "Flexing");
+                foundMood = true;
+            }
+            if (keccak256(bytes(t)) == keccak256("Boost multiplier")) {
+                assertEq(vm.parseJsonString(json, string.concat(k, ".value")), "1.10x");
+                foundBoost = true;
+            }
+        }
+        assertTrue(foundHead || bytes(headValue).length == 0, "real Head trait present");
+        assertTrue(foundMood && foundBoost, "live mood and boost present");
+    }
+
+    function test_tokenURI_dormantBeforeDaemonLink() public {
+        uint256 id = _mint(alice);
+        _linkRealTraits();
+        string memory json = _tokenJson(id);
+        assertEq(vm.parseJsonString(json, ".image"), string.concat(chog.IMAGE_BASE_URI(), vm.toString(chog.artIdOf(id)), ".webp"));
+    }
+
+    function test_tokenURI_gasStaysReasonable() public {
+        (uint256 id,) = _awakeChog();
+        _linkRealTraits();
+        uint256 g = gasleft();
+        chog.tokenURI(id);
+        uint256 used = g - gasleft();
+        emit log_named_uint("tokenURI gas", used);
+        assertLt(used, 1_500_000);
+    }
+
+    function test_tokenURI_hostileDaemonStillRenders() public {
+        // revert, malformed data, burn-all-gas and a huge payload: the real image and traits must still render
+        for (uint256 mode; mode < 4; ++mode) {
+            MockChog c = new MockChog(3, 10);
+            vm.prank(address(this));
+            uint256 id = c.freeMint();
+            ERC6551RegistryMock reg = new ERC6551RegistryMock();
+            c.setDaemon(address(reg), address(impl), SALT);
+            ChogRealTraits reader = new ChogRealTraits(
+                IChogTraitRows(address(new ChogTraitRows0())),
+                IChogTraitRows(address(new ChogTraitRows1())),
+                IChogTraitNames(address(new ChogTraitNames()))
+            );
+            c.setRealTraits(address(reader));
+            vm.etch(c.daemonOf(id), address(new HostileDaemon(mode)).code);
+            string memory uri = c.tokenURI(id);
+            string memory json = string(Base64Decode.decode(_slice(uri, bytes(JSON_PREFIX).length)));
+            assertEq(
+                vm.parseJsonString(json, ".image"), string.concat(c.IMAGE_BASE_URI(), vm.toString(c.artIdOf(id)), ".webp")
+            );
+        }
     }
 
     function test_livingURI_includesArtworkAttribute() public {

@@ -18,3 +18,4 @@ contracts/broadcast/*/*/dry-run/
 # Local research (not part of the product)
 research_notes/
 reports/
+script/.chog-metadata/
