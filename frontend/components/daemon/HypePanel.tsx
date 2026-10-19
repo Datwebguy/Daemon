@@ -24,6 +24,22 @@ export function HypePanel({ ctx }: { ctx: DaemonCtx }) {
   const minMon = cfg?.minHypeMon;
   const minChog = cfg?.minHypeChog;
   const [amount, setAmount] = useState("");
+  const [lucky, setLucky] = useState(false);
+
+  // $CHOG perks and lucky hype are optional platform settings: zero / no address means "off".
+  const chogStep = cfg && cfg.chogBoostStepBps > 0 ? cfg.chogBoostStepBps : cfg?.boostStepBps;
+  const chogDuration = cfg && cfg.chogBoostDuration > 0 ? cfg.chogBoostDuration : cfg?.boostDuration;
+  const chogBurn = cfg ? cfg.chogBurnBps / 100 : 0;
+  const chogBetter = Boolean(cfg && ((chogStep ?? 0) > cfg.boostStepBps || (chogDuration ?? 0) > cfg.boostDuration || chogBurn > 0));
+  const luckyOn = Boolean(cfg && cfg.entropy !== "0x0000000000000000000000000000000000000000");
+  const luckyFee = useReadContract({
+    address: account,
+    abi: daemonAccountAbi,
+    functionName: "luckyFee",
+    chainId: CHAIN_ID,
+    query: { enabled: Boolean(luckyOn && deployed), staleTime: 60_000 },
+  });
+  const fee = luckyOn && lucky && mode === "mon" ? (luckyFee.data ?? BigInt(0)) : BigInt(0);
 
   const decimals = mode === "mon" ? 18 : (chog?.decimals ?? 18);
   const unit = mode === "mon" ? "MON" : (chog?.symbol ?? "CHOG");
@@ -84,20 +100,21 @@ export function HypePanel({ ctx }: { ctx: DaemonCtx }) {
   const hype = async () => {
     if (!user || parsed === undefined || parsed === BigInt(0) || waiting) return;
     if (mode === "mon") {
+      const goLucky = luckyOn && lucky && fee > BigInt(0);
       await run(
         "Hype",
         async (config) => {
           const { request } = await simulateContract(config, {
             address: account,
             abi: daemonAccountAbi,
-            functionName: "hype",
-            value: parsed,
+            functionName: goLucky ? "hypeLucky" : "hype",
+            value: goLucky ? parsed + fee : parsed,
             account: user,
             chainId: CHAIN_ID,
           });
           return writeContract(config, request);
         },
-        { done: "Hyped! The boost is on" },
+        { done: goLucky ? "Hyped! Rolling the dice…" : "Hyped! The boost is on" },
       );
       setAmount("");
       return;
@@ -180,6 +197,26 @@ export function HypePanel({ ctx }: { ctx: DaemonCtx }) {
           />
         </div>
 
+        {mode === "chog" && chogBetter && cfg && (
+          <p className="rounded-xl bg-[color:var(--c-pink)]/15 px-3 py-2 text-xs font-bold leading-snug">
+            Bonus for {unit}: +{((chogStep ?? 0) / 10_000).toFixed(2)}x per hype for {fmtDuration(chogDuration ?? 0)}
+            {chogBurn > 0 ? `, and ${chogBurn}% is burned for good.` : "."}
+          </p>
+        )}
+
+        {mode === "mon" && luckyOn && (
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border-[3px] border-[var(--st-line)] px-3 py-2">
+            <input type="checkbox" checked={lucky} onChange={(e) => setLucky(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 accent-[var(--jelly)]" />
+            <span className="min-w-0 text-xs leading-snug">
+              <span className="block font-extrabold">Feeling lucky?</span>
+              <span className="text-dim">
+                Roll the dice (Pyth Entropy){luckyFee.data !== undefined ? `, ${fmtUnits(luckyFee.data, 18, 3)} MON extra` : ""}. 1 in{" "}
+                {cfg && cfg.luckyChanceBps > 0 ? Math.max(1, Math.round(10_000 / cfg.luckyChanceBps)) : 5} rolls is critical: the boost jumps to max and lasts longer.
+              </span>
+            </span>
+          </label>
+        )}
+
         {presets.length > 0 && (
           <div className="flex flex-wrap gap-3" role="group" aria-label="Quick amounts">
             {presets.map((p) => (
@@ -216,9 +253,9 @@ export function HypePanel({ ctx }: { ctx: DaemonCtx }) {
             className="min-w-0 flex-1"
             onClick={hype}
             loading={busy}
-            disabled={!user || !deployed || parsed === undefined || parsed === BigInt(0) || belowMin || waiting}
+            disabled={!user || !deployed || parsed === undefined || parsed === BigInt(0) || belowMin || waiting || (mode === "mon" && lucky && luckyOn && luckyFee.data === undefined)}
           >
-            {!user ? "Sign in" : needsAllow ? "Allow & hype" : "Hype it"}
+            {!user ? "Sign in" : needsAllow ? "Allow & hype" : mode === "mon" && lucky && luckyOn ? "Hype & roll" : "Hype it"}
           </StickerButton>
           <CooldownRing waiting={waiting} wait={userWait > 0 ? userWait : daemonWait} total={userWait > 0 ? cooldownUser : cooldownDaemon} />
         </div>
@@ -241,8 +278,8 @@ export function HypePanel({ ctx }: { ctx: DaemonCtx }) {
         )}
         {cfg && (
           <p className="text-xs leading-relaxed text-dim">
-            Each hype adds +{(cfg.boostStepBps / 10_000).toFixed(2)}x to its harvests for {fmtDuration(cfg.boostDuration)}, paid from the jar. Anything left in the
-            jar belongs to the Chog&apos;s holder.
+            Each {chog && chogBetter ? "MON " : ""}hype adds +{(cfg.boostStepBps / 10_000).toFixed(2)}x to its harvests for {fmtDuration(cfg.boostDuration)}, paid from the
+            jar. Anything left in the jar belongs to the Chog&apos;s holder.
           </p>
         )}
       </div>
