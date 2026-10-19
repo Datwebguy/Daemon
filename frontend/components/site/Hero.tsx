@@ -4,11 +4,20 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MOODS } from "@/lib/mood";
-import { Creature } from "../creature/Creature";
+import { ChogFace } from "@/components/ChogFace";
 import { cx } from "../ui";
 import { Draggable } from "./Draggable";
 
-type Puff = { id: number; x: number; y: number; e: string; dx: number };
+type Puff = { id: number; x: number; y: number; k: number; dx: number };
+
+/** Little confetti shapes thrown when you poke the Chog: stars, hearts and coins, drawn, not emoji. */
+function PuffShape({ k }: { k: number }) {
+  const colors = ["#ff7eb6", "#ffd84d", "#5cc6ff", "#7a5af0", "#7de3b8"];
+  const c = colors[k % colors.length]!;
+  if (k % 3 === 0) return <svg viewBox="0 0 24 24" className="h-6 w-6"><path d="M12 2l2.9 6.6 7.1.7-5.3 4.8 1.6 7L12 17.4 5.7 21.1l1.6-7L2 9.3l7.1-.7z" fill={c} stroke="#1e1238" strokeWidth="1.6" strokeLinejoin="round" /></svg>;
+  if (k % 3 === 1) return <svg viewBox="0 0 24 24" className="h-6 w-6"><path d="M12 21s-8-5.3-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.7-8 11-8 11z" fill={c} stroke="#1e1238" strokeWidth="1.6" strokeLinejoin="round" /></svg>;
+  return <svg viewBox="0 0 24 24" className="h-6 w-6"><circle cx="12" cy="12" r="9" fill={c} stroke="#1e1238" strokeWidth="1.6" /><circle cx="12" cy="12" r="4.5" fill="none" stroke="#1e1238" strokeWidth="1.4" /></svg>;
+}
 
 export function Hero() {
   const [mood, setMood] = useState(1);
@@ -45,12 +54,11 @@ export function Hero() {
       // every 4th poke it changes its mind about how it feels
       if ((pokes + 1) % 4 === 0) setMood((x) => (x + 1) % MOODS.length);
       const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-      const emojis = ["💜", "✨", "🪙", "⭐", "💛", "🫧"];
       const batch: Puff[] = Array.from({ length: 5 }, (_, k) => ({
         id: ++idRef.current,
         x: e.clientX - r.left,
         y: e.clientY - r.top,
-        e: emojis[(idRef.current + k) % emojis.length]!,
+        k: idRef.current + k,
         dx: (k - 2) * 26 + (Math.random() * 14 - 7),
       }));
       setPuffs((p) => [...p, ...batch]);
@@ -122,16 +130,16 @@ export function Hero() {
 
           {/* stickers you can pick up and move */}
           <Draggable rotate={-8} className="absolute left-[-2%] top-[18%] z-30" label="A sticker that says gm">
-            <div className="sticker px-4 py-2 font-display text-xl">gm ☀️</div>
+            <div className="sticker px-4 py-2 font-display text-xl">gm</div>
           </Draggable>
           <Draggable rotate={9} className="absolute right-[-1%] top-[34%] z-30" label="A tip sticker">
-            <div className="sticker !bg-butter px-4 py-2 font-display text-lg">+5% tip 🪙</div>
+            <div className="sticker !bg-butter px-4 py-2 font-display text-lg">+5% tip</div>
           </Draggable>
           <Draggable rotate={-5} className="absolute bottom-[26%] left-[2%] z-30" label="A boost sticker">
-            <div className="sticker !bg-pink px-4 py-2 font-display text-lg">1.25× boost ⚡</div>
+            <div className="sticker !bg-pink px-4 py-2 font-display text-lg">1.25× boost</div>
           </Draggable>
-          <Draggable rotate={6} className="absolute right-[6%] top-[8%] z-30 hidden sm:block" label="A star sticker">
-            <div className="sticker grid h-14 w-14 place-items-center !rounded-full !bg-sky text-2xl">⭐</div>
+          <Draggable rotate={6} className="absolute bottom-[22%] right-[1%] z-30 hidden sm:block" label="A rarity sticker">
+            <div className="sticker !bg-sky px-4 py-2 font-display text-lg">Tier: Rare</div>
           </Draggable>
 
           {/* speech bubble */}
@@ -143,16 +151,16 @@ export function Hero() {
 
           {/* the creature: poke it */}
           <div
-            className={cx("absolute inset-[15%] top-[26%] cursor-pointer select-none", squish % 2 ? "[animation:squish-a_.5s_ease]" : "[animation:squish-b_.5s_ease]")}
+            className={cx("absolute inset-x-[19%] top-[25%] aspect-square cursor-pointer select-none", squish % 2 ? "[animation:squish-a_.5s_ease]" : "[animation:squish-b_.5s_ease]")}
             key={squish}
             onPointerDown={poke}
             role="button"
             tabIndex={0}
-            aria-label="Poke the Daemon"
+            aria-label="Poke the Chog"
             onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && setSquish((s) => s + 1)}
           >
             <div className="h-full w-full animate-float">
-              <Creature mood={mood} track boosted={mood === 3} className="h-full w-full drop-shadow-[0_28px_30px_rgb(81_52_201/0.3)]" />
+              <ChogFace mood={mood} seed={line} boosted={mood === 3} className="h-full w-full drop-shadow-[0_28px_30px_rgb(81_52_201/0.3)]" />
             </div>
             {puffs.map((p) => (
               <span
@@ -161,7 +169,7 @@ export function Hero() {
                 className="pointer-events-none absolute text-2xl"
                 style={{ left: p.x, top: p.y, ["--dx" as string]: `${p.dx}px`, animation: "puff 1.05s ease-out forwards" }}
               >
-                {p.e}
+                <PuffShape k={p.k} />
               </span>
             ))}
           </div>
@@ -181,8 +189,8 @@ export function Hero() {
                   )}
                   title={x.blurb}
                 >
-                  <span aria-hidden>{x.emoji}</span>
-                  <span className="ml-1 hidden sm:inline">{x.name}</span>
+                  <span className="inline-block h-2.5 w-2.5 rounded-full align-middle" style={{ background: x.hex }} aria-hidden />
+                  <span className="ml-1.5 align-middle">{x.name}</span>
                 </button>
               ))}
             </div>

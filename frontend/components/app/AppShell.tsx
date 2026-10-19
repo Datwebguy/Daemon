@@ -86,7 +86,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Logo className="lg:hidden" href="/app" />
             <div className="ml-auto flex items-center gap-2">
               <button onClick={toggle} className="grid h-9 w-9 place-items-center rounded-full text-dim lg:hidden" aria-label="Toggle day and night">
-                {theme === "dark" ? "☀" : "☾"}
+                <Icon d={theme === "dark" ? "M12 3v2M12 19v2M5 5l1.5 1.5M17.5 17.5 19 19M3 12h2M19 12h2M5 19l1.5-1.5M17.5 6.5 19 5M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8z" : "M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"} className="h-5 w-5" />
               </button>
               <Wallet compact />
             </div>

@@ -3,6 +3,7 @@
 import { useEffect, useRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 
 import { cx } from "@/lib/cx";
+import { ChogFace } from "./ChogFace";
 export { cx };
 
 export function Card({
@@ -107,11 +108,11 @@ export function Notice({ tone = "info", title, children }: { tone?: "info" | "wa
   );
 }
 
-export function Empty({ emoji, title, children, art }: { emoji?: string; title: ReactNode; children?: ReactNode; art?: ReactNode }) {
+export function Empty({ mood, title, children, art }: { mood?: number; title: ReactNode; children?: ReactNode; art?: ReactNode }) {
   return (
     <div className="clay-sunk flex flex-col items-center gap-3 rounded-[1.75rem] px-6 py-12 text-center">
-      {art ?? (emoji && <div className="text-5xl animate-float" aria-hidden>{emoji}</div>)}
-      <div className="font-display text-xl font-bold">{title}</div>
+      {art ?? <ChogFace mood={mood} className="h-28 w-28 animate-float" />}
+      <div className="font-display text-xl">{title}</div>
       {children && <div className="max-w-md text-sm text-dim">{children}</div>}
     </div>
   );

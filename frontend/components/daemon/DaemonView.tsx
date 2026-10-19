@@ -41,7 +41,7 @@ export function DaemonView({ tokenId }: { tokenId: bigint }) {
 
   if (!contracts.mockChog) {
     return (
-      <Empty emoji="🌙" title="Daemons are still waking up">
+      <Empty title="Daemons are still waking up">
         The app opens as soon as the network is ready. Check back shortly.
       </Empty>
     );
@@ -49,13 +49,13 @@ export function DaemonView({ tokenId }: { tokenId: bigint }) {
   if (chog.isLoading) return <Loading label={`Finding Chog #${tokenId.toString()}…`} />;
   if (chog.error)
     return (
-      <Empty emoji="📡" title="We couldn't reach the network">
+      <Empty title="We couldn't reach the network">
         It usually comes back in a moment. Try refreshing the page.
       </Empty>
     );
   if (chog.exists === false)
     return (
-      <Empty emoji="🔍" title={`Chog #${tokenId.toString()} doesn't exist yet`}>
+      <Empty title={`Chog #${tokenId.toString()} doesn't exist yet`}>
         Nobody has minted it.{" "}
         <Link href="/explore" className="font-semibold text-jelly underline-offset-4 hover:underline">
           Try another number
@@ -126,7 +126,7 @@ export function DaemonView({ tokenId }: { tokenId: bigint }) {
             <DeployPanel tokenId={tokenId} user={user} isOwner={isOwner} canCreate={daemon.canCreate} onDeployed={() => void daemon.refetchCode()} />
           )}
           {!ctx && !daemon.isLoading && (
-            <Empty emoji="🌙" title="This Daemon can't be reached yet">
+            <Empty title="This Daemon can't be reached yet">
               Check back in a little while.
             </Empty>
           )}

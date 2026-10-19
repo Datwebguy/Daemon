@@ -11,7 +11,7 @@ import { CHAIN_ID, LOG_BLOCK_RANGE } from "@/lib/config";
 import { fmtUnits } from "@/lib/format";
 import { gql, indexerConfigured, LAST_UPDATE_QUERY, type DaemonUpdateRow } from "@/lib/indexer";
 import { moodOf } from "@/lib/mood";
-import { Creature } from "../creature/Creature";
+import { ChogFace } from "@/components/ChogFace";
 import { Button, Dialog } from "../ui";
 import type { DaemonCtx } from "./types";
 
@@ -104,13 +104,13 @@ function ShareCard({ ctx, image }: { ctx: DaemonCtx; image?: string }) {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={image} alt="" crossOrigin="anonymous" className="h-full w-full rounded-[1.5rem] object-cover shadow-2xl" />
             ) : (
-              <Creature mood={state.mood} className="h-full w-full" />
+              <ChogFace mood={state.mood} className="h-full w-full" />
             )}
           </div>
           <div className="relative max-w-[55%]">
             <div className="text-sm font-semibold text-white/75">Chog #{tokenId.toString()}</div>
             <div className="mt-1 font-display text-4xl font-extrabold leading-none sm:text-5xl">
-              {m?.emoji} {m?.name ?? "Asleep"}
+              {m?.name ?? "Asleep"}
             </div>
             <div className="mt-3 font-display text-lg font-bold tabular-nums">{yieldLine}</div>
           </div>

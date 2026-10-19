@@ -1,4 +1,4 @@
-import { Creature } from "../creature/Creature";
+import { ChogFace } from "@/components/ChogFace";
 
 /** "What is a Daemon?" An annotated drawing instead of three identical cards. */
 export function Anatomy() {
@@ -24,7 +24,7 @@ export function Anatomy() {
               {/* chog */}
               <div className="text-center">
                 <div className="clay-sunk mx-auto grid aspect-square w-full max-w-[9rem] place-items-center rounded-[1.6rem]">
-                  <Creature mood={1} className="h-[78%] w-[78%]" />
+                  <ChogFace mood={1} className="h-[78%] w-[78%]" />
                 </div>
                 <div className="mt-3 font-display font-bold">Your Chog</div>
                 <div className="text-xs text-dim">the collectible you hold</div>

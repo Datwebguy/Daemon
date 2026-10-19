@@ -1,18 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import { artSources } from "@/lib/chogFaces";
 
 /** A few real Chog Genesis artworks (public collection on Monad), loaded lazily from IPFS gateways. */
-const IMAGE_CID = "bafybeihau2egcccbdxymeckmmbrqytbfor5gkt3en6d5fsbueymdbq7g6e";
 const IDS = [1468, 1492, 1525, 1581, 1676, 1794, 1941, 104, 269, 393, 534, 692, 829, 992, 1158, 1292];
-const GATEWAYS = ["https://ipfs.filebase.io/ipfs", "https://gateway.pinata.cloud/ipfs"];
 const TILTS = [-3, 2, -1.5, 3, -2.5, 1.5, -3.5, 2.5];
 const BACKS = ["#ffe6f1", "#fff3c4", "#dff4ff", "#e9e2ff", "#dcf7ec", "#ffe9dc"];
 
 function Tile({ id, i }: { id: number; i: number }) {
   const [gw, setGw] = useState(0);
   const [ready, setReady] = useState(false);
-  const failed = gw >= GATEWAYS.length;
+  const sources = artSources(id, 384);
+  const failed = gw >= sources.length;
   return (
     <div
       className="sticker sticker-pop relative w-44 shrink-0 overflow-hidden p-2 sm:w-52"
@@ -23,7 +23,7 @@ function Tile({ id, i }: { id: number; i: number }) {
         {!failed && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={`${GATEWAYS[gw]}/${IMAGE_CID}/${id}.webp`}
+            src={sources[gw]}
             alt={`Chog Genesis artwork number ${id}`}
             loading="lazy"
             decoding="async"
@@ -32,7 +32,7 @@ function Tile({ id, i }: { id: number; i: number }) {
             className={`h-full w-full object-cover transition-opacity duration-500 ${ready ? "opacity-100" : "opacity-0"}`}
           />
         )}
-        {failed && <div className="grid h-full w-full place-items-center text-4xl">🐸</div>}
+        {failed && <div className="h-full w-full bg-black/5" />}
       </div>
       <div className="mt-2 flex items-center justify-between px-1 font-display text-lg">
         <span>#{id}</span>

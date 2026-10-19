@@ -8,7 +8,7 @@ import { contracts, FAUCET_URL } from "@/lib/config";
 import { useOwnedChogs } from "@/lib/hooks";
 import { DOLLARS_LABEL, MINT_LABEL, useStarter } from "@/lib/starter";
 import { ChogCard } from "./ChogCard";
-import { Creature } from "./creature/Creature";
+import { ChogFace } from "@/components/ChogFace";
 import { Button, cx, Loading, Notice } from "./ui";
 
 export function MyChogs() {
@@ -21,7 +21,7 @@ export function MyChogs() {
     return (
       <section className="clay relative overflow-hidden rounded-[2.5rem] px-6 py-14 text-center sm:px-12 sm:py-20">
         <div aria-hidden className="absolute inset-0 bg-[radial-gradient(50%_60%_at_50%_30%,var(--glow),transparent_70%)]" />
-        <Creature className="relative mx-auto h-44 w-44 animate-float sm:h-56 sm:w-56" />
+        <ChogFace className="relative mx-auto h-44 w-44 animate-float sm:h-56 sm:w-56" />
         <h1 className="relative mt-6 font-display text-[clamp(2.2rem,5vw,3.4rem)] font-extrabold leading-tight tracking-tight">Your Daemons are asleep.</h1>
         <p className="relative mx-auto mt-3 max-w-md text-lg text-dim">Sign in to wake them up. Use your email, Google, X or a wallet. It takes a few seconds.</p>
         <Button size="lg" className="relative mt-8" onClick={auth.login} disabled={!auth.ready}>
@@ -91,7 +91,7 @@ function EmptyDen() {
   const s = useStarter();
   return (
     <div className="clay-sunk flex flex-col items-center gap-4 rounded-[2rem] px-6 py-14 text-center">
-      <Creature className="h-32 w-32 animate-float" />
+      <ChogFace className="h-32 w-32 animate-float" />
       <div className="font-display text-2xl font-bold">No Chogs here yet</div>
       <p className="max-w-sm text-dim">Mint a free test Chog and it&apos;ll show up right here, ready to wake.</p>
       <Button onClick={() => void s.mint()} loading={s.pending === MINT_LABEL} disabled={!s.canMint}>

@@ -6,7 +6,7 @@ import { useChog, useDaemonAddress, useDaemonSummary, useProtocol, useSlowNow } 
 import { moodOf } from "@/lib/mood";
 import { useInView } from "@/lib/useInView";
 import { ChogImage } from "./ChogImage";
-import { Creature } from "./creature/Creature";
+import { ChogFace } from "@/components/ChogFace";
 import { cx, Spinner } from "./ui";
 
 /** Lazy: renders a placeholder (and makes no network calls) until scrolled near the viewport. */
@@ -50,13 +50,13 @@ function ChogCardBody({ tokenId }: { tokenId: bigint }) {
               className="absolute bottom-2 left-2 h-12 w-12 overflow-hidden rounded-full border-2 border-white/70 shadow-md"
               style={{ background: `radial-gradient(circle at 50% 40%, ${m?.hex ?? "#a8a3b8"}88, var(--surface))` }}
             >
-              <Creature mood={cardMood} boosted={boosted} className="h-full w-full p-0.5" />
+              <ChogFace mood={cardMood} boosted={boosted} className="h-full w-full p-0.5" />
             </div>
           }
-          fallback={<Creature mood={cardMood} className="h-full w-full p-4" />}
+          fallback={<ChogFace mood={cardMood} className="h-full w-full p-4" />}
         />
         {boosted && (
-          <span className="absolute left-2.5 top-2.5 rounded-full bg-spark px-2.5 py-1 text-[11px] font-bold text-white shadow">⚡ Boosted</span>
+          <span className="absolute left-2.5 top-2.5 rounded-full bg-spark px-2.5 py-1 text-[11px] font-bold text-white shadow">Boosted</span>
         )}
       </div>
       <div className="px-2 pb-1.5 pt-3">
@@ -68,7 +68,7 @@ function ChogCardBody({ tokenId }: { tokenId: bigint }) {
             <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs font-semibold text-dim">Asleep</span>
           ) : m ? (
             <span className={cx("rounded-full px-2.5 py-0.5 text-xs font-semibold", m.bg, m.text)}>
-              {m.emoji} {m.name}
+              {m.name}
             </span>
           ) : null}
         </div>

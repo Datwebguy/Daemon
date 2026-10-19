@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useReducer, useRef, useState, type ReactNode } from "react";
 import { BOOSTED_LINES, MOODS } from "@/lib/mood";
-import { Creature } from "../creature/Creature";
+import { ChogFace } from "@/components/ChogFace";
 import { Button, Stat, cx } from "../ui";
 import { burstConfetti } from "./confetti";
 
@@ -510,7 +510,7 @@ export function Playground({
                     aria-label={`Poke your pretend Daemon. It is feeling ${m.name}.`}
                     className="block aspect-square w-full origin-bottom touch-manipulation rounded-[2rem]"
                   >
-                    <Creature mood={s.mood} boosted={isBoosted} track className="h-full w-full drop-shadow-[0_26px_34px_rgb(81_52_201/0.35)]" />
+                    <ChogFace mood={s.mood} boosted={isBoosted} track className="h-full w-full drop-shadow-[0_26px_34px_rgb(81_52_201/0.35)]" />
                   </button>
                 </div>
               </div>
@@ -525,7 +525,7 @@ export function Playground({
 
             <div className="relative mt-4 flex flex-col items-center gap-3 text-center">
               <span className={cx("inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-bold", m.bg, m.text)}>
-                <span aria-hidden>{m.emoji}</span>
+                
                 {m.name}
               </span>
               <p className="max-w-xs text-xs leading-snug text-dim">{m.when}</p>

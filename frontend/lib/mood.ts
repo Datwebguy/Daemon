@@ -2,7 +2,6 @@
 export type MoodInfo = {
   id: number;
   name: string;
-  emoji: string;
   blurb: string;
   /** what makes a Daemon feel this way */
   when: string;
@@ -19,7 +18,6 @@ export const MOODS: readonly MoodInfo[] = [
   {
     id: 0,
     name: "Chill",
-    emoji: "😌",
     blurb: "Vibing. Steady yield, nothing to prove.",
     when: "Things are calm and earnings are steady.",
     lines: ["Just vibing and earning.", "Steady yield, steady mind.", "Chill day. The vault does the work."],
@@ -31,7 +29,6 @@ export const MOODS: readonly MoodInfo[] = [
   {
     id: 1,
     name: "Smug",
-    emoji: "😏",
     blurb: "Knows it's doing better than your savings account.",
     when: "Each harvest is at least as big as the last one.",
     lines: ["Another harvest. As expected.", "Compounding while you sleep. You're welcome.", "Numbers only go one way with me."],
@@ -43,7 +40,6 @@ export const MOODS: readonly MoodInfo[] = [
   {
     id: 2,
     name: "Chaotic",
-    emoji: "🤪",
     blurb: "Degen energy. Numbers go up, down, sideways.",
     when: "Earnings swing wildly, or it's hyped to the max.",
     lines: ["Yield is swinging. I love it.", "Volatility is my cardio.", "Strap in. This Daemon has no brakes."],
@@ -55,7 +51,6 @@ export const MOODS: readonly MoodInfo[] = [
   {
     id: 3,
     name: "Flexing",
-    emoji: "💪",
     blurb: "Boosted and loving it. Tell your friends.",
     when: "Someone hyped it and its harvest just grew.",
     lines: ["Bigger harvest than last time. Look at me.", "Boosted and up only. Flexing hard.", "Check the chart. Then check me."],
@@ -67,7 +62,6 @@ export const MOODS: readonly MoodInfo[] = [
   {
     id: 4,
     name: "Tired",
-    emoji: "😴",
     blurb: "Nobody has harvested or hyped it in a while.",
     when: "Three days pass without any attention.",
     lines: ["Nobody compounds me anymore...", "So sleepy. Someone hype me?", "Gathering dust. Wake me with a compound."],

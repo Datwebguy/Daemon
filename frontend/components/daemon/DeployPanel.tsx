@@ -4,7 +4,7 @@ import { simulateContract, writeContract } from "wagmi/actions";
 import { erc6551RegistryAbi } from "@/lib/abis";
 import { CHAIN_ID, contracts, env } from "@/lib/config";
 import { useTx } from "@/lib/tx";
-import { Creature } from "../creature/Creature";
+import { ChogFace } from "@/components/ChogFace";
 import { Button } from "../ui";
 
 const LABEL = "Wake up this Daemon";
@@ -47,7 +47,7 @@ export function DeployPanel({
   return (
     <section className="clay relative overflow-hidden rounded-[2rem] p-6 sm:p-8">
       <div aria-hidden className="absolute -right-6 -top-6 h-40 w-40 opacity-90">
-        <Creature className="h-full w-full" />
+        <ChogFace className="h-full w-full" />
       </div>
       <div className="relative max-w-md">
         <h2 className="font-display text-3xl font-extrabold">Still asleep</h2>

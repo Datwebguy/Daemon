@@ -17,7 +17,7 @@ import {
   type HypedRow,
 } from "@/lib/indexer";
 import { moodOf } from "@/lib/mood";
-import { Creature } from "./creature/Creature";
+import { ChogFace } from "@/components/ChogFace";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { cx, Empty, Loading, Notice } from "./ui";
 
@@ -43,6 +43,15 @@ const okRow = (x: unknown, amountKeys: string[]): boolean =>
   toBigIntSafe(x.blockNumber) !== undefined &&
   amountKeys.every((k) => toBigIntSafe(x[k]) !== undefined);
 
+/** Simple line icons for events that have no Chog expression of their own. */
+function FeedGlyph({ kind }: { kind: "harvest" | "hype" }) {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke={kind === "hype" ? "var(--spark)" : "var(--mint)"} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      {kind === "hype" ? <path d="M13 3 5 14h6l-1 7 8-11h-6z" /> : <path d="M12 21V9m0 0c0-3 2-5 6-5 0 4-2 6-6 5Zm0 3c0-3-2-5-6-5 0 4 2 6 6 5Z" />}
+    </svg>
+  );
+}
+
 function FeedList() {
   const { asset, chog } = useProtocol();
   const dec = asset?.decimals ?? 18;
@@ -63,7 +72,7 @@ function FeedList() {
 
   if (q.isLoading) return <Loading label="Catching up on the latest…" />;
   if (q.error) return <Notice tone="error" title="Activity is taking a nap">We couldn&apos;t load the latest. It usually comes back in a moment.</Notice>;
-  if (!q.data?.length) return <Empty emoji="🦗" title="Quiet so far">Nothing has happened yet. Be the first to hype or harvest a Daemon.</Empty>;
+  if (!q.data?.length) return <Empty title="Quiet so far">Nothing has happened yet. Be the first to hype or harvest a Daemon.</Empty>;
 
   return (
     <ul className="space-y-3">
@@ -73,11 +82,11 @@ function FeedList() {
             Chog #{it.tokenId}
           </Link>
         );
-        let icon: string;
+        let icon: React.ReactNode;
         let body: React.ReactNode;
         if (it.kind === "update") {
           const m = moodOf(it.mood);
-          icon = m?.emoji ?? "💬";
+          icon = <ChogFace mood={m?.id} seed={Number(it.tokenId) || 0} className="h-full w-full" />;
           const y = toBigIntSafe(it.yieldAmount) ?? BigInt(0);
           body = (
             <>
@@ -90,7 +99,7 @@ function FeedList() {
             </>
           );
         } else if (it.kind === "compound") {
-          icon = "🌾";
+          icon = <FeedGlyph kind="harvest" />;
           body = (
             <p className="text-sm">
               {chogLink} was harvested by <span className="font-semibold">{shortAddr(String(it.caller ?? ""))}</span>.{" "}
@@ -100,7 +109,7 @@ function FeedList() {
           );
         } else {
           const isMon = String(it.token ?? "").toLowerCase() === zeroAddress;
-          icon = "⚡";
+          icon = <FeedGlyph kind="hype" />;
           body = (
             <p className="text-sm">
               <span className="font-semibold">{shortAddr(String(it.from ?? ""))}</span> hyped {chogLink} with{" "}
@@ -113,7 +122,7 @@ function FeedList() {
         }
         return (
           <li key={`${it.kind}-${it.id}`} className="flex gap-3 rounded-[1.5rem] bg-surface-2/70 p-4" style={{ animation: "rise .4s ease both" }}>
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface text-xl" aria-hidden>
+            <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-surface" aria-hidden>
               {icon}
             </span>
             <div className="min-w-0 flex-1">
@@ -143,7 +152,7 @@ function Leaderboard() {
   });
   if (q.isLoading) return <Loading label="Tallying up…" />;
   if (q.error) return <Notice tone="error" title="The leaderboard is taking a nap">Try again in a moment.</Notice>;
-  if (!q.data?.length) return <Empty emoji="🏁" title="No one on the board yet">Earn a harvest to claim the top spot.</Empty>;
+  if (!q.data?.length) return <Empty title="No one on the board yet">Earn a harvest to claim the top spot.</Empty>;
   return (
     <ol className="space-y-2">
       {q.data.map((d, i) => {
@@ -156,7 +165,7 @@ function Leaderboard() {
                   {i + 1}
                 </span>
                 <span className="h-9 w-9">
-                  <Creature mood={d.mood} className="h-full w-full" />
+                  <ChogFace mood={d.mood} className="h-full w-full" />
                 </span>
                 <span className="font-semibold">#{d.tokenId}</span>
                 {m && <span className="hidden text-xs text-dim sm:inline">{m.name}</span>}
@@ -181,7 +190,7 @@ export function Feed() {
       </header>
       {!indexerConfigured ? (
         <section className="clay relative overflow-hidden rounded-[2.5rem] px-6 py-14 text-center">
-          <Creature mood={0} className="mx-auto h-40 w-40 animate-float" />
+          <ChogFace mood={0} className="mx-auto h-40 w-40 animate-float" />
           <h2 className="mt-6 font-display text-3xl font-extrabold">The live feed is warming up</h2>
           <p className="mx-auto mt-2 max-w-md text-dim">Soon you&apos;ll see every harvest, hype and mood swing here as it happens. Meanwhile, every Daemon&apos;s own page is fully live.</p>
           <Link href="/explore" className="mt-7 inline-flex rounded-full bg-jelly px-6 py-3 font-semibold text-white">

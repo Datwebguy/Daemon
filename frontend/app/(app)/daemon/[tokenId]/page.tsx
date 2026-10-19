@@ -11,7 +11,7 @@ export default async function DaemonPage({ params }: { params: Promise<{ tokenId
   const { tokenId } = await params;
   if (!/^\d{1,78}$/.test(tokenId)) {
     return (
-      <Empty emoji="🤔" title="That Chog number doesn't look right">
+      <Empty title="That Chog number doesn't look right">
         Chog numbers are whole numbers, like 7 or 128.{" "}
         <Link href="/explore" className="font-semibold text-jelly underline-offset-4 hover:underline">
           Find a Daemon

@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { moodOf } from "@/lib/mood";
 import { ChogImage } from "./ChogImage";
-import { Creature } from "./creature/Creature";
+import { ChogFace } from "@/components/ChogFace";
 import { cx } from "./ui";
 
 /**
@@ -76,14 +76,14 @@ export function DaemonAvatar({
             srcs={srcs}
             eager
             alt={name ?? "This Chog"}
-            fallback={<Creature mood={mood} boosted={boosted} track className="h-full w-full p-6" />}
+            fallback={<ChogFace mood={mood} boosted={boosted} track className="h-full w-full p-6" />}
             overlay={
               <div
                 className="absolute bottom-3 left-3 h-14 w-14 overflow-hidden rounded-full border-2 border-white/70 shadow-lg"
                 style={{ background: `radial-gradient(circle at 50% 40%, ${m?.hex ?? "#a8a3b8"}88, var(--surface))` }}
                 title={m ? `Feeling ${m.name}` : "Asleep"}
               >
-                <Creature mood={mood} boosted={boosted} className="h-full w-full p-1" />
+                <ChogFace mood={mood} boosted={boosted} className="h-full w-full p-1" />
               </div>
             }
           />
@@ -99,7 +99,7 @@ export function DaemonAvatar({
         </div>
         {boosted && (
           <div className="absolute -right-3 -top-3 rounded-full bg-spark px-3.5 py-1.5 font-display text-sm font-bold text-white shadow-[0_10px_24px_-8px_rgb(255_122_69/0.7)] animate-pop">
-            ⚡ {multiplier ? `${multiplier.toFixed(2)}×` : "Boosted"}
+            {multiplier ? `${multiplier.toFixed(2)}×` : "Boosted"}
           </div>
         )}
       </div>
@@ -107,7 +107,7 @@ export function DaemonAvatar({
       {m ? (
         <div className="mt-6 text-center">
           <div className={cx("font-display text-3xl font-extrabold", m.text)}>
-            {m.emoji} {m.name}
+            {m.name}
           </div>
           <p className="mt-1 max-w-xs text-sm text-dim">{m.blurb}</p>
         </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { MOODS } from "@/lib/mood";
-import { Creature } from "../creature/Creature";
+import { ChogFace } from "@/components/ChogFace";
 import { cx } from "../ui";
 
 const STEPS: { title: string; body: string; mood?: number; boosted?: boolean; say: string }[] = [
@@ -80,7 +80,7 @@ export function Story() {
               <div key={active} className="absolute top-6 left-1/2 w-[80%] -translate-x-1/2 text-center animate-pop">
                 <span className="glass inline-block rounded-2xl px-4 py-2.5 font-display text-base font-semibold">“{s.say}”</span>
               </div>
-              <Creature mood={s.mood} boosted={s.boosted} track className="relative mt-10 h-56 w-56 sm:h-64 sm:w-64 animate-float" />
+              <ChogFace mood={s.mood} boosted={s.boosted} track className="relative mt-10 h-56 w-56 sm:h-64 sm:w-64 animate-float" />
               <ol className="absolute bottom-5 flex gap-1.5" aria-hidden>
                 {STEPS.map((_, i) => (
                   <li key={i} className={cx("h-1.5 rounded-full transition-all duration-500", i === active ? "w-8 bg-jelly" : "w-1.5 bg-fg/20")} />

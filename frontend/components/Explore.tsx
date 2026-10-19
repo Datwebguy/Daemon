@@ -114,7 +114,7 @@ export function Explore() {
           </form>
           <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-dim">
             <button onClick={surprise} disabled={total < 1} className="rounded-full bg-jelly/12 px-4 py-2 font-semibold text-jelly-deep transition hover:bg-jelly/20 disabled:opacity-40 dark:text-jelly-soft">
-              🎲 Surprise me
+              Surprise me
             </button>
             {total > 0 && <span>{total.toLocaleString()} Chogs minted so far</span>}
           </div>

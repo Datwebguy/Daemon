@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { MOODS } from "@/lib/mood";
-import { Creature } from "../creature/Creature";
+import { ChogFace } from "@/components/ChogFace";
 import { cx } from "../ui";
 
 /** Five moods as an expanding accordion: hover, focus or tap to open one. */
@@ -37,9 +37,6 @@ export function Moods() {
             >
               <div className="flex h-full flex-col p-5 sm:p-6">
                 <div className={cx("flex items-center gap-3", !isOpen && "lg:flex-col lg:items-start")}>
-                  <span className="text-3xl" aria-hidden>
-                    {m.emoji}
-                  </span>
                   <span className={cx("font-display text-2xl font-bold", !isOpen && "lg:[writing-mode:vertical-rl] lg:rotate-180 lg:text-xl")}>{m.name}</span>
                 </div>
                 <div className={cx("grid transition-all duration-700", isOpen ? "mt-4 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
@@ -50,7 +47,7 @@ export function Moods() {
                   </div>
                 </div>
                 <div className={cx("mt-auto self-end transition-all duration-700", isOpen ? "h-40 w-40 opacity-100 sm:h-48 sm:w-48" : "h-0 w-0 opacity-0 lg:h-16 lg:w-16 lg:self-center lg:opacity-70")}>
-                  <Creature mood={i} boosted={i === 3 && isOpen} className="h-full w-full" />
+                  <ChogFace mood={i} boosted={i === 3 && isOpen} className="h-full w-full" />
                 </div>
               </div>
             </button>

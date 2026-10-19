@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Creature } from "../creature/Creature";
+import { ChogFace } from "@/components/ChogFace";
 import { Logo } from "../brand/Logo";
 
 const COLS: { title: string; links: { href: string; label: string; external?: boolean }[] }[] = [
@@ -48,7 +48,7 @@ export function SiteFooter() {
           data-reveal
         >
           <div aria-hidden className="absolute -right-10 -bottom-16 h-72 w-72 opacity-90 sm:h-96 sm:w-96">
-            <Creature mood={3} boosted className="h-full w-full" />
+            <ChogFace mood={3} boosted className="h-full w-full" />
           </div>
           <div className="relative max-w-xl">
             <h2 className="font-display text-[clamp(2.2rem,5vw,3.8rem)] leading-[1]">Your Chog is waiting to wake up.</h2>
@@ -95,7 +95,7 @@ export function SiteFooter() {
       {/* giant wordmark with a peeking Daemon */}
       <div className="relative mx-auto mt-16 max-w-6xl px-5 sm:px-8" aria-hidden>
         <div className="absolute left-[58%] top-[-2.6rem] h-24 w-24 sm:top-[-4.2rem] sm:h-36 sm:w-36">
-          <Creature mood={1} track className="h-full w-full" />
+          <ChogFace mood={1} track className="h-full w-full" />
         </div>
         <div className="select-none font-display text-[clamp(5rem,23vw,17rem)] font-extrabold leading-[0.78] tracking-[-0.06em] text-jelly/15">daemon</div>
       </div>
