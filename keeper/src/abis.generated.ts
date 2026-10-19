@@ -6394,6 +6394,11 @@ export const welcomeDripAbi = [
         "name": "to",
         "type": "address",
         "internalType": "address"
+      },
+      {
+        "name": "userId",
+        "type": "bytes32",
+        "internalType": "bytes32"
       }
     ],
     "outputs": [],
@@ -6517,6 +6522,25 @@ export const welcomeDripAbi = [
   },
   {
     "type": "function",
+    "name": "userClaimed",
+    "inputs": [
+      {
+        "name": "userId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "withdraw",
     "inputs": [
       {
@@ -6537,6 +6561,12 @@ export const welcomeDripAbi = [
         "type": "address",
         "indexed": true,
         "internalType": "address"
+      },
+      {
+        "name": "userId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
       },
       {
         "name": "amount",
@@ -6651,7 +6681,17 @@ export const welcomeDripAbi = [
   },
   {
     "type": "error",
+    "name": "UserAlreadyClaimed",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "ZeroAddress",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ZeroUser",
     "inputs": []
   }
 ] as const;

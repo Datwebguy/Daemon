@@ -18,7 +18,7 @@ contract ReenterDrip {
     }
 
     receive() external payable {
-        drip.claimFor(address(0xB0B0)); // tries a second claim during the first
+        drip.claimFor(address(0xB0B0), keccak256("reenter")); // tries a second claim during the first
     }
 }
 
@@ -27,6 +27,11 @@ contract WelcomeDripTest is Test {
     address funder = makeAddr("funder");
     address relayer = address(this); // the test contract plays the app's relayer
     address newbie = makeAddr("newbie");
+
+    /// each wallet gets its own pretend account, unless a test wants to share one
+    function _u(address wallet) internal pure returns (bytes32) {
+        return keccak256(abi.encode("user", wallet));
+    }
 
     function setUp() public {
         vm.warp(1_700_000_000);
@@ -52,10 +57,10 @@ contract WelcomeDripTest is Test {
         address bot = makeAddr("bot");
         vm.prank(bot);
         vm.expectRevert(WelcomeDrip.NotRelayer.selector);
-        drip.claimFor(makeAddr("sybil1"));
+        drip.claimFor(makeAddr("sybil1"), _u(makeAddr("sybil1")));
         vm.prank(funder); // even the funder is not the relayer
         vm.expectRevert(WelcomeDrip.NotRelayer.selector);
-        drip.claimFor(makeAddr("sybil2"));
+        drip.claimFor(makeAddr("sybil2"), _u(makeAddr("sybil2")));
         assertEq(address(drip).balance, 3 ether);
     }
 
@@ -70,18 +75,18 @@ contract WelcomeDripTest is Test {
         vm.prank(funder);
         drip.setRelayer(fresh);
         vm.expectRevert(WelcomeDrip.NotRelayer.selector); // the old, possibly leaked key stops working
-        drip.claimFor(newbie);
+        drip.claimFor(newbie, _u(newbie));
         vm.prank(fresh);
-        drip.claimFor(newbie);
+        drip.claimFor(newbie, _u(newbie));
         assertEq(newbie.balance, 0.3 ether);
     }
 
     function test_relayerClaimsForEmptyWallet() public {
         assertEq(drip.status(newbie), "");
-        vm.expectEmit(true, false, false, true, address(drip));
-        emit WelcomeDrip.Dripped(newbie, 0.3 ether);
+        vm.expectEmit(true, true, false, true, address(drip));
+        emit WelcomeDrip.Dripped(newbie, _u(newbie), 0.3 ether);
         uint256 relayerBefore = relayer.balance;
-        drip.claimFor(newbie);
+        drip.claimFor(newbie, _u(newbie));
         assertEq(newbie.balance, 0.3 ether);
         assertEq(relayer.balance, relayerBefore, "the relayer only pays gas, it never receives MON");
         assertTrue(drip.claimed(newbie));
@@ -89,32 +94,32 @@ contract WelcomeDripTest is Test {
     }
 
     function test_onlyOncePerWallet() public {
-        drip.claimFor(newbie);
+        drip.claimFor(newbie, _u(newbie));
         vm.deal(newbie, 0); // spends it all, still cannot claim again
         vm.expectRevert(WelcomeDrip.AlreadyClaimed.selector);
-        drip.claimFor(newbie);
+        drip.claimFor(newbie, _u(newbie));
     }
 
     function test_walletsWithMonCannotClaim() public {
         vm.deal(newbie, 0.3 ether);
         assertEq(drip.status(newbie), "wallet already has MON");
         vm.expectRevert(abi.encodeWithSelector(WelcomeDrip.NotNew.selector, 0.3 ether));
-        drip.claimFor(newbie);
+        drip.claimFor(newbie, _u(newbie));
         vm.deal(newbie, 0.29 ether); // nearly empty is fine
-        drip.claimFor(newbie);
+        drip.claimFor(newbie, _u(newbie));
         assertEq(newbie.balance, 0.59 ether);
     }
 
     function test_dailyLimitResetsNextDay() public {
-        drip.claimFor(makeAddr("a"));
-        drip.claimFor(makeAddr("b"));
-        drip.claimFor(makeAddr("c"));
+        drip.claimFor(makeAddr("a"), _u(makeAddr("a")));
+        drip.claimFor(makeAddr("b"), _u(makeAddr("b")));
+        drip.claimFor(makeAddr("c"), _u(makeAddr("c")));
         assertEq(drip.status(makeAddr("d")), "daily limit reached");
         vm.expectRevert(WelcomeDrip.DailyLimitReached.selector);
-        drip.claimFor(makeAddr("d"));
+        drip.claimFor(makeAddr("d"), _u(makeAddr("d")));
 
         vm.warp(block.timestamp + 1 days);
-        drip.claimFor(makeAddr("d"));
+        drip.claimFor(makeAddr("d"), _u(makeAddr("d")));
         assertEq(drip.claimsToday(), 1);
     }
 
@@ -123,7 +128,7 @@ contract WelcomeDripTest is Test {
         drip.withdraw(2.9 ether);
         assertEq(drip.status(newbie), "drip is empty");
         vm.expectRevert(WelcomeDrip.OutOfFunds.selector);
-        drip.claimFor(newbie);
+        drip.claimFor(newbie, _u(newbie));
     }
 
     function test_onlyFunderWithdraws() public {
@@ -138,7 +143,7 @@ contract WelcomeDripTest is Test {
     function test_failedTransferRevertsAndKeepsClaim() public {
         RejectMon r = new RejectMon();
         vm.expectRevert(WelcomeDrip.TransferFailed.selector);
-        drip.claimFor(address(r));
+        drip.claimFor(address(r), _u(address(r)));
         assertFalse(drip.claimed(address(r)));
     }
 
@@ -149,13 +154,29 @@ contract WelcomeDripTest is Test {
         drip.setRelayer(address(r));
         vm.prank(address(r));
         vm.expectRevert(WelcomeDrip.TransferFailed.selector);
-        drip.claimFor(address(r));
+        drip.claimFor(address(r), _u(address(r)));
         assertEq(address(drip).balance, 3 ether);
         assertFalse(drip.claimed(address(r)));
     }
 
     function test_zeroAddress() public {
         vm.expectRevert(WelcomeDrip.ZeroAddress.selector);
-        drip.claimFor(address(0));
+        drip.claimFor(address(0), _u(address(0)));
+    }
+
+    function test_oneClaimPerAccountEvenWithManyWallets() public {
+        bytes32 me = keccak256("one-person");
+        drip.claimFor(makeAddr("w1"), me);
+        vm.expectRevert(WelcomeDrip.UserAlreadyClaimed.selector);
+        drip.claimFor(makeAddr("w2"), me); // a second fresh wallet for the same account is refused
+        assertFalse(drip.claimed(makeAddr("w2")));
+        assertTrue(drip.userClaimed(me));
+        drip.claimFor(makeAddr("w2"), keccak256("someone-else")); // a different account is fine
+        assertEq(drip.claimsToday(), 2);
+    }
+
+    function test_zeroUserRefused() public {
+        vm.expectRevert(WelcomeDrip.ZeroUser.selector);
+        drip.claimFor(newbie, bytes32(0));
     }
 }

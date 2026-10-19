@@ -107,7 +107,7 @@ Network: Monad Testnet (Chain ID 10143). Faucet: https://faucet.monad.xyz
 
 ## Core Features
 
-- **Welcome MON**: a brand-new wallet gets a little free MON once (`WelcomeDrip`), so the first visit never starts at a faucet. The limits (one claim per wallet, only near-empty wallets, a daily cap) are enforced by the contract; the app's relayer only pays gas
+- **Welcome MON**: a brand-new wallet gets a little free MON once (`WelcomeDrip`), so the first visit never starts at a faucet. The limits (one claim per wallet and one per signed-in account, only near-empty wallets, a daily cap) are enforced by the contract; the app's relayer only pays gas
 - **$CHOG is the better way to hype**: a $CHOG hype adds +0.10x for 4h (MON: +0.05x for 3h) and 10% of it is burned
 - **Lucky hype**: a MON hype plus a Pyth Entropy roll. The hype applies at once; when the number arrives, a critical roll (1 in 5) maxes the boost and extends it. The boost is still paid only from the jar
 - **Marketplace metadata**: `tokenURI` is on-chain JSON with the real Chog Genesis image, the real traits (all 1,969 packed on-chain and verified) and the live state of the Daemon. `livingURI` is the fully drawn mood image
