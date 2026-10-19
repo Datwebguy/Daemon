@@ -1,0 +1,30 @@
+{
+  "name": "daemon-keeper",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Open-source reference keeper for Daemon: compounds Daemon accounts on Monad and earns the caller bounty. Anyone can run it.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dry-run": "tsx src/index.ts --dry-run",
+    "once": "tsx src/index.ts --once",
+    "build": "tsc -p tsconfig.build.json",
+    "start:dist": "node dist/index.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "viem": "2.56.9"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.0",
+    "tsx": "4.23.14",
+    "typescript": "7.0.2",
+    "vitest": "5.0.2"
+  }
+}

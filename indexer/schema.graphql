@@ -1,0 +1,171 @@
+# Daemon indexer schema (Envio HyperIndex v3).
+# Conventions:
+# - Addresses are lowercase (address_format: lowercase in config.yaml).
+# - Event entity ids are "<chainId>_<blockNumber>_<logIndex>". Order history by
+#   blockNumber + logIndex, never by timestamp (Monad timestamps have 1 s granularity
+#   and 3-4 blocks share one).
+# - Amounts are raw base-asset units (BigInt). Hype amounts are in the hype token's units.
+
+type Daemon {
+  # ERC-6551 account address (lowercase)
+  id: ID!
+  tokenId: BigInt! @index
+  tokenContract: String!
+  implementation: String!
+  createdAtBlock: Int!
+  createdAtTimestamp: Int!
+  createdTxHash: String!
+
+  # --- leaderboard ---
+  # NET yield, equal to DaemonAccount.lifetimeYield() on-chain: the sum of DaemonUpdate.yieldAmount, i.e. per compound
+  # profit + boostTopUp - bounty. This is the figure to rank and display. Hype emits yieldAmount 0.
+  lifetimeYield: BigInt! @index
+  # GROSS harvest: sum of Compounded.profit (before the bounty, excluding the boost top-up). NOT lifetimeYield.
+  grossHarvest: BigInt!
+  # Sum of Compounded.bounty paid out to bounty recipients
+  totalBounties: BigInt!
+  compoundCount: Int! @index
+  hypeCount: Int! @index
+  # Hype amount paid in MON (wei)
+  totalHypeMon: BigInt!
+  # Hype amount paid in tokens other than MON (e.g. $CHOG), raw units
+  totalHypeToken: BigInt!
+  updateCount: Int!
+
+  # --- current state ---
+  lastMood: Int!
+  # Chill | Smug | Chaotic | Flexing | Tired
+  lastMoodName: String!
+  lastMessage: String!
+  lastUpdateAt: Int
+  # Block timestamp of the last Compounded event (seconds)
+  lastCompoundAt: Int @index
+  lastCompoundBlock: Int
+  boostMultiplierBps: BigInt!
+  boostExpiresAt: BigInt!
+  # Net assets allocated: sum Allocated.assets - sum Deallocated.assets, reset by Swept
+  allocatedAssets: BigInt!
+  sweptCount: Int!
+  lastSweptAt: Int
+  lastSweptTo: String
+
+  updates: [DaemonUpdate!]! @derivedFrom(field: "daemon")
+  compounds: [Compounded!]! @derivedFrom(field: "daemon")
+  hypes: [Hyped!]! @derivedFrom(field: "daemon")
+}
+
+# Feed item: one message from a Daemon
+type DaemonUpdate {
+  id: ID!
+  daemon: Daemon!
+  tokenId: BigInt!
+  mood: Int!
+  moodName: String!
+  message: String!
+  yieldAmount: BigInt!
+  blockNumber: Int! @index
+  logIndex: Int!
+  timestamp: Int!
+  txHash: String!
+}
+
+type Compounded {
+  id: ID!
+  daemon: Daemon!
+  tokenId: BigInt!
+  # Keyed by the event's `caller` field, which is the BOUNTY RECIPIENT (the keeper), not msg.sender of the account call.
+  keeper: Keeper!
+  # GROSS harvest of this compound (before the bounty)
+  profit: BigInt!
+  bounty: BigInt!
+  # Transaction `from` (the EOA that submitted the tx), lowercase. Informational; empty if unavailable.
+  txFrom: String!
+  blockNumber: Int! @index
+  logIndex: Int!
+  timestamp: Int!
+  txHash: String!
+}
+
+type Hyped {
+  id: ID!
+  daemon: Daemon!
+  tokenId: BigInt!
+  # address that hyped
+  hyper: String! @index
+  # payment token; 0x000...000 = MON
+  token: String!
+  isMon: Boolean!
+  amount: BigInt!
+  blockNumber: Int! @index
+  logIndex: Int!
+  timestamp: Int!
+  txHash: String!
+}
+
+type BoostApplied {
+  id: ID!
+  daemon: Daemon!
+  tokenId: BigInt!
+  multiplierBps: BigInt!
+  expiresAt: BigInt!
+  blockNumber: Int!
+  logIndex: Int!
+  timestamp: Int!
+  txHash: String!
+}
+
+# Allocated / Deallocated / Swept history
+type Allocation {
+  id: ID!
+  daemon: Daemon!
+  tokenId: BigInt!
+  # ALLOCATE | DEALLOCATE | SWEEP
+  kind: String!
+  # yield source (empty for SWEEP)
+  source: String!
+  assets: BigInt!
+  shares: BigInt!
+  # sweep recipient (empty otherwise)
+  recipient: String!
+  blockNumber: Int!
+  logIndex: Int!
+  timestamp: Int!
+  txHash: String!
+}
+
+# Anyone who received a compound bounty. Keyed by Compounded.caller, which the contracts set to the bounty
+# recipient (the keeper address when going through DaemonHub), so this is correct for hub batches too.
+type Keeper {
+  # bounty recipient address (lowercase)
+  id: ID!
+  totalBounties: BigInt! @index
+  compounds: Int! @index
+  # Sum of GROSS profit harvested in the compounds this keeper was paid for (not net yield)
+  totalProfitCompounded: BigInt!
+  firstCompoundAt: Int!
+  lastCompoundAt: Int!
+  history: [Compounded!]! @derivedFrom(field: "keeper")
+}
+
+# Anyone who hyped a Daemon
+type Hyper {
+  id: ID!
+  hypeCount: Int! @index
+  totalMon: BigInt!
+  totalToken: BigInt!
+  lastHypeAt: Int!
+}
+
+# Singleton (id = "global") with platform totals
+type Stats {
+  id: ID!
+  daemonCount: Int!
+  # NET yield across all Daemons (sum of DaemonUpdate.yieldAmount = sum of every lifetimeYield())
+  totalYield: BigInt!
+  # GROSS harvest across all Daemons (sum of Compounded.profit)
+  totalGrossHarvest: BigInt!
+  totalBounties: BigInt!
+  compoundCount: Int!
+  hypeCount: Int!
+  keeperCount: Int!
+}

@@ -1,0 +1,28 @@
+{
+  "name": "daemon-indexer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Envio HyperIndex indexer for Daemon accounts on Monad Testnet (10143)",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22.15.0"
+  },
+  "scripts": {
+    "codegen": "envio codegen",
+    "dev": "envio dev",
+    "start": "envio start",
+    "stop": "envio stop",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "typecheck:shim": "tsc --noEmit -p tsconfig.shim.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "envio": "3.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.0",
+    "typescript": "5.9.3",
+    "vitest": "5.0.2"
+  }
+}

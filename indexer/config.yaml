@@ -1,0 +1,68 @@
+# yaml-language-server: $schema=./node_modules/envio/evm.schema.json
+#
+# Daemon indexer (Envio HyperIndex v3) for Monad Testnet, chain id 10143.
+#
+# Discovery: the canonical ERC-6551 registry emits ERC6551AccountCreated for every
+# token-bound account on the chain. src/EventHandlers.ts filters it to
+#   implementation == ENVIO_DAEMON_IMPLEMENTATION and tokenContract == ENVIO_MOCK_CHOG
+# (both indexed topics, so the filter runs at the data source) and registers each
+# matching account as a `DaemonAccount` (contractRegister). All DaemonAccount
+# events are then indexed from those addresses only, so nobody can spoof them.
+#
+# Placeholders: set ENVIO_DAEMON_IMPLEMENTATION, ENVIO_MOCK_CHOG and ENVIO_START_BLOCK
+# in .env after deploying the contracts (see .env.example).
+name: daemon-indexer
+description: Daemon (ERC-6551 Chog accounts) feed + leaderboard on Monad Testnet
+
+# Lowercase every address (ids, srcAddress, params) so the frontend can query by
+# `address.toLowerCase()` without checksum handling.
+address_format: lowercase
+
+# Needed for tx links in the feed.
+field_selection:
+  transaction_fields:
+    - hash
+    - from   # stored as Compounded.txFrom (the tx submitter; Keeper entities are keyed by the event's `caller`)
+
+contracts:
+  - name: ERC6551Registry
+    handler: ./src/EventHandlers.ts
+    events:
+      - event: ERC6551AccountCreated(address account, address indexed implementation, bytes32 salt, uint256 chainId, address indexed tokenContract, uint256 indexed tokenId)
+  - name: DaemonAccount
+    handler: ./src/EventHandlers.ts
+    # No address: registered at runtime from ERC6551AccountCreated.
+    events:
+      - event: Allocated(uint256 indexed tokenId, address indexed source, uint256 assets, uint256 shares)
+      - event: Deallocated(uint256 indexed tokenId, address indexed source, uint256 shares, uint256 assets)
+      - event: Compounded(uint256 indexed tokenId, address indexed caller, uint256 profit, uint256 bounty)
+      - event: DaemonUpdate(uint256 indexed tokenId, uint8 mood, string message, uint256 yieldAmount)
+      - event: Hyped(uint256 indexed tokenId, address indexed from, address token, uint256 amount)
+      - event: BoostApplied(uint256 indexed tokenId, uint256 multiplierBps, uint256 expiresAt)
+      - event: Swept(uint256 indexed tokenId, address indexed to)
+
+chains:
+  - id: 10143 # Monad Testnet
+    # Set to the block of the Daemon deployment (the registry itself is older).
+    # With HyperSync, 0 also works (just slower on first sync).
+    start_block: ${ENVIO_START_BLOCK:-0}
+    # HyperSync supports Monad Testnet (https://10143.hypersync.xyz) and is the
+    # primary source by default; it needs ENVIO_API_TOKEN.
+    # The public RPC is only a fallback. Its eth_getLogs range is capped at
+    # 100-1,000 blocks, so the block window is kept small.
+    # To run WITHOUT HyperSync, change `for: fallback` to `for: sync` (see README).
+    rpc:
+      - url: ${ENVIO_MONAD_RPC_URL:-https://testnet-rpc.monad.xyz}
+        for: fallback
+        initial_block_interval: 100
+        interval_ceiling: 100
+        acceleration_additive: 0
+        backoff_multiplicative: 0.5
+        backoff_millis: 2000
+        query_timeout_millis: 20000
+    contracts:
+      - name: ERC6551Registry
+        address:
+          - 0x000000006551c19487814612e58FE06813775758
+      # DaemonAccount is intentionally not listed here: its addresses come from
+      # contractRegister (dynamic, like a factory).

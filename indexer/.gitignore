@@ -1,0 +1,11 @@
+/node_modules/
+.envio/
+envio-env.d.ts
+generated/
+build
+logs
+*.res.js
+*.res.mjs
+.env
+.env.*
+!.env.example
