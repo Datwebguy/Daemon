@@ -88,6 +88,11 @@ html {
 html.dark {
   color-scheme: dark;
 }
+html,
+body {
+  /* Nothing decorative (marquees, rotated ribbons, stickers) may widen the page on a phone. */
+  overflow-x: clip;
+}
 body {
   background: var(--bg);
   color: var(--fg);

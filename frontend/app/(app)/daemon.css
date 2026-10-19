@@ -668,3 +668,24 @@ input[type="range"].dm-rail:focus-visible {
 .dm-z {
   animation: dm-z 3.4s ease-in-out infinite;
 }
+
+/* phones: lighter pads so three fit side by side without cramming */
+@media (max-width: 639px) {
+  .dm-pads,
+  .dm-panelwrap {
+    --gap: 0.6rem;
+  }
+  .dm-pads {
+    gap: 0.6rem;
+  }
+  .dm-pad {
+    min-height: 5.6rem;
+    padding: 0.65rem 0.6rem 0.6rem;
+    border-width: 3px;
+    border-radius: 1rem;
+    box-shadow: 4px 4px 0 var(--st-shadow);
+  }
+  .dm-pad[aria-pressed="true"] {
+    transform: translate(3px, 3px);
+  }
+}

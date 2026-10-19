@@ -10,7 +10,7 @@ export function Ticker() {
   ];
   const row = [...items, ...items];
   return (
-    <section aria-label="What Daemons are saying" className="relative z-10 -my-2 -rotate-1 border-y-[3px] border-[#1e1238] bg-butter py-4 text-[#1e1238]">
+    <section aria-label="What Daemons are saying" className="relative z-10 -my-2 -rotate-1 overflow-hidden border-y-[3px] border-[#1e1238] bg-butter py-4 text-[#1e1238]">
       <div className="flex w-max animate-marquee gap-8 whitespace-nowrap">
         {row.map((it, i) => (
           <span key={i} className="inline-flex items-center gap-3 font-display text-xl" aria-hidden={i >= items.length}>

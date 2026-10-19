@@ -95,7 +95,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-30 border-b-[3px] border-[color:var(--st-line)] bg-[var(--surface)]">
           <div className="flex h-16 items-stretch">
             <div className="title-slab shrink-0">
-              <div className="slash ink-on flex h-full items-center pl-4 pr-10 sm:pr-14 lg:pl-8 lg:pr-16" style={{ background: `var(${here.tone})`, color: here.tone === "--jelly" ? "#fff" : INK }}>
+              <div className="slash ink-on flex h-full items-center pl-4 pr-8 sm:pr-14 lg:pl-8 lg:pr-16" style={{ background: `var(${here.tone})`, color: here.tone === "--jelly" ? "#fff" : INK }}>
                 <Logo href="/" className="lg:hidden [&>span]:max-sm:text-[1.4rem]" />
                 <div className="hidden leading-none lg:block">
                   <div className="text-[11px] font-bold uppercase tracking-[0.18em] opacity-70">{here.kicker}</div>
@@ -104,8 +104,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               </div>
             </div>
             <div aria-hidden className="tape-bg hidden flex-1 sm:block" />
-            <div className="ml-auto flex items-center gap-2 pl-2 pr-3 sm:gap-3 sm:pr-6 lg:pr-10">
-              <ThemeToggle compact className="!h-10" />
+            <div className="ml-auto flex min-w-0 items-center gap-2 pl-2 pr-3 sm:gap-3 sm:pr-6 lg:pr-10">
+              <ThemeToggle mini className="!h-10" />
               <Wallet compact />
             </div>
           </div>

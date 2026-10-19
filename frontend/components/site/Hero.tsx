@@ -83,7 +83,7 @@ export function Hero() {
             </span>
             Live on Monad · free to try
           </p>
-          <h1 className="mt-6 font-display text-[clamp(2.7rem,6.2vw,5.4rem)] leading-[0.98]" style={{ animation: "rise .9s .08s ease both" }}>
+          <h1 className="mt-6 font-display text-[clamp(2.3rem,10.5vw,5.4rem)] sm:text-[clamp(2.7rem,6.2vw,5.4rem)] leading-[0.98]" style={{ animation: "rise .9s .08s ease both" }}>
             <span className="block whitespace-nowrap">Every Chog has</span>
             <span className="block whitespace-nowrap">a little daemon.</span>
             <span className="relative mt-2 inline-block">
@@ -190,13 +190,13 @@ export function Hero() {
                   aria-checked={mood === i}
                   onClick={() => pick(i)}
                   className={cx(
-                    "rounded-full px-2.5 py-1.5 text-sm font-bold transition sm:px-3.5",
+                    "rounded-full px-2.5 py-1.5 text-sm font-bold transition max-[400px]:min-h-9 max-[400px]:min-w-9 sm:px-3.5",
                     mood === i ? "bg-[var(--st-fg)] text-[var(--st-bg)]" : "text-[var(--st-fg)] opacity-70 hover:opacity-100",
                   )}
                   title={x.blurb}
                 >
                   <span className="inline-block h-2.5 w-2.5 rounded-full align-middle" style={{ background: x.hex }} aria-hidden />
-                  <span className="ml-1.5 align-middle">{x.name}</span>
+                  <span className={cx("ml-1.5 align-middle", mood !== i && "max-[400px]:sr-only")}>{x.name}</span>
                 </button>
               ))}
             </div>

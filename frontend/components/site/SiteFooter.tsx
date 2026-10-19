@@ -62,7 +62,7 @@ function FooterLinkItem({ l }: { l: FooterLink }) {
 
 export function SiteFooter() {
   return (
-    <footer className="relative mt-24">
+    <footer className="relative mt-12 sm:mt-24">
       {/* closing call to action */}
       <div className="relative z-10 mx-auto max-w-6xl px-5 sm:px-8">
         <div
@@ -87,8 +87,8 @@ export function SiteFooter() {
       {/* the dark footer proper: zigzag edge, tucked behind the call to action */}
       <div className="zigzag-top relative -mt-14 bg-night pt-28 text-white">
         <div className="mx-auto max-w-6xl px-5 sm:px-8">
-          <div className="grid gap-12 md:grid-cols-[1.25fr_repeat(4,1fr)]">
-            <div>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-[1.25fr_repeat(4,1fr)] md:gap-12">
+            <div className="col-span-2 md:col-span-1">
               <Logo light />
               <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/65">A little spirit for every Chog. It saves, earns and has opinions about it.</p>
               <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -111,7 +111,7 @@ export function SiteFooter() {
         </div>
 
         {/* giant wordmark cropped by the bottom edge, with a real Chog sitting on it */}
-        <div className="relative mt-20 overflow-hidden select-none" aria-hidden>
+        <div className="relative mt-14 overflow-hidden select-none sm:mt-20" aria-hidden>
           <div className="relative mx-auto max-w-[96rem] px-2">
             <div className="absolute bottom-[58%] right-[9%] z-10 w-[clamp(4.5rem,10vw,8rem)] -rotate-6">
               <ChogFace mood={1} seed={2} className="aspect-square w-full" />
